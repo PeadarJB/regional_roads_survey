@@ -3,64 +3,24 @@
 
 import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
-import type { StateCreator } from 'zustand';
-import type { RoadSegment, ThemeMode, User } from '../types'; // Adjust the import path as necessary
 
-// --- TYPE DEFINITIONS FOR SLICES ---
+// Import slice interfaces and creators from their respective files
+import { type DataSlice, createDataSlice } from './slices/dataSlice';
+import { type ThemeSlice, createThemeSlice } from './slices/themeSlice';
+import { type AuthSlice, createAuthSlice } from './slices/authSlice';
+import { type ParametersSlice, createParametersSlice } from './slices/parametersSlice';
+import { type FiltersSlice, createFiltersSlice } from './slices/filtersSlice';
 
-export interface DataSlice {
-  roadNetwork: RoadSegment[];
-  loading: boolean;
-  fetchRoadNetworkData: () => Promise<void>;
-}
-
-export interface ThemeSlice {
-  themeMode: ThemeMode;
-  setThemeMode: (mode: ThemeMode) => void;
-}
-
-export interface AuthSlice {
-  isAuthenticated: boolean;
-  user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
-}
-
-// Combined state type
-export type StoreState = DataSlice & ThemeSlice & AuthSlice;
-
-// --- SLICE CREATORS ---
-
-const createDataSlice: StateCreator<StoreState, [], [], DataSlice> = (set) => ({
-  roadNetwork: [],
-  loading: false,
-  fetchRoadNetworkData: async () => {
-    set({ loading: true });
-    try {
-      const response = await fetch('/data/staticData.json');
-      if (!response.ok) {
-        throw new Error('Failed to fetch road network data.');
-      }
-      const data: RoadSegment[] = await response.json();
-      set({ roadNetwork: data, loading: false });
-    } catch (error) {
-      console.error(error);
-      set({ loading: false });
-    }
-  },
-});
-
-const createThemeSlice: StateCreator<StoreState, [], [], ThemeSlice> = (set) => ({
-  themeMode: 'light',
-  setThemeMode: (mode) => set({ themeMode: mode }),
-});
-
-const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (set) => ({
-  isAuthenticated: false,
-  user: null,
-  login: (user) => set({ isAuthenticated: true, user }),
-  logout: () => set({ isAuthenticated: false, user: null }),
-});
+/**
+ * The combined state type for the entire application.
+ * We use an intersection of all slice types to create a single, unified state shape.
+ * This is the key fix that resolves the TypeScript errors.
+ */
+export type StoreState = DataSlice &
+  ThemeSlice &
+  AuthSlice &
+  ParametersSlice &
+  FiltersSlice;
 
 // --- MAIN STORE CREATION ---
 
@@ -72,6 +32,8 @@ export const usePavementStore = create<StoreState>()(
           ...createDataSlice(...a),
           ...createThemeSlice(...a),
           ...createAuthSlice(...a),
+          ...createParametersSlice(...a),
+          ...createFiltersSlice(...a),
         }),
         {
           name: 'pavement-dashboard-storage', // name of the item in the storage (must be unique)
