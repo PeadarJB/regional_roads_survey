@@ -4,11 +4,12 @@
 import React, { useEffect } from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result } from 'antd';
 import { LogoutOutlined, LoginOutlined, SunOutlined, MoonOutlined } from '@ant-design/icons';
-import { ThemeProvider } from 'antd-style';
+import { ThemeProvider, useTheme } from 'antd-style';
 import { usePavementStore } from './store/usePavementStore';
 import { lightTheme, darkTheme } from './config/themeConfig';
+import Dashboard from './components/Dashboard';
 
-const { Header, Content, Footer } = Layout;
+const { Header, Footer } = Layout;
 const { Title, Text } = Typography;
 
 /**
@@ -16,11 +17,12 @@ const { Title, Text } = Typography;
  */
 const LoginScreen: React.FC = () => {
   const login = usePavementStore((state) => state.login);
+  const theme = useTheme();
 
   return (
-    <Layout style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <Layout style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.colorBgLayout }}>
       <Result
-        icon={<LoginOutlined />}
+        icon={<LoginOutlined style={{ color: theme.colorPrimary }}/>}
         title="Regional Roads Survey Dashboard"
         subTitle="Please log in to access the dashboard."
         extra={
@@ -41,9 +43,8 @@ const MainDashboard: React.FC = () => {
     logout: state.logout,
     user: state.user,
   }));
-  const { loading, roadNetwork, fetchRoadNetworkData } = usePavementStore((state) => ({
+  const { loading, fetchRoadNetworkData } = usePavementStore((state) => ({
     loading: state.loading,
-    roadNetwork: state.roadNetwork,
     fetchRoadNetworkData: state.fetchRoadNetworkData,
   }));
   const { themeMode, setThemeMode } = usePavementStore((state) => ({
@@ -58,7 +59,7 @@ const MainDashboard: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
         <Title level={4} style={{ color: 'white', margin: 0 }}>
           RMO Dashboard
         </Title>
@@ -75,25 +76,15 @@ const MainDashboard: React.FC = () => {
           </Button>
         </Space>
       </Header>
-      <Content style={{ padding: '24px 48px' }}>
-        <div style={{ background: '#fff', padding: 24, minHeight: 280, borderRadius: 8 }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', paddingTop: 80 }}>
-              <Spin size="large" tip="Loading Road Network Data..." />
-            </div>
-          ) : (
-            <div>
-              <Title level={3}>Data Loaded Successfully</Title>
-              <Text>
-                Total road segments loaded: <strong>{roadNetwork.length}</strong>
-              </Text>
-              <pre style={{ background: '#f5f5f5', padding: 16, marginTop: 16, borderRadius: 4, maxHeight: 400, overflow: 'auto' }}>
-                {JSON.stringify(roadNetwork, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-      </Content>
+      <Layout>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 'calc(100vh - 128px)' }}>
+            <Spin size="large" tip="Loading Road Network Data..." />
+          </div>
+        ) : (
+          <Dashboard />
+        )}
+      </Layout>
       <Footer style={{ textAlign: 'center' }}>
         Regional Roads Survey ©{new Date().getFullYear()}
       </Footer>
