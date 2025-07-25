@@ -4,7 +4,7 @@
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
 import type { MaintenanceCategory } from '../../types';
-import { calculateMaintenanceData, type MaintenanceCalculationResult } from '../../utils/calculations';
+import { calculateMaintenanceData } from '../../utils/calculations';
 
 export interface CalculationsSlice {
   // Calculation results
