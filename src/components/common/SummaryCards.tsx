@@ -1,5 +1,5 @@
 // src/components/common/SummaryCards.tsx
-// This component displays the high-level summary statistics for the dashboard.
+// FIXED: Optimized selectors to prevent infinite loops
 
 import React from 'react';
 import { Row, Col, Card, Statistic, Select } from 'antd';
@@ -7,18 +7,12 @@ import { EuroCircleOutlined, AreaChartOutlined } from '@ant-design/icons';
 import { usePavementStore } from '../../store/usePavementStore';
 
 const SummaryCards: React.FC = () => {
-  // Get calculated totals from the store
-  const { totalCost, totalLength } = usePavementStore((state) => ({
-    totalCost: state.totalCost,
-    totalLength: state.totalLength
-  }));
-
-  // Get filter state and actions
-  const { selectedCounty, availableCounties, setSelectedCounty } = usePavementStore((state) => ({
-    selectedCounty: state.selectedCounty,
-    availableCounties: state.availableCounties,
-    setSelectedCounty: state.setSelectedCounty
-  }));
+  // FIXED: Use individual selectors instead of object selectors to prevent infinite loops
+  const totalCost = usePavementStore((state) => state.totalCost);
+  const totalLength = usePavementStore((state) => state.totalLength);
+  const selectedCounty = usePavementStore((state) => state.selectedCounty);
+  const availableCounties = usePavementStore((state) => state.availableCounties);
+  const setSelectedCounty = usePavementStore((state) => state.setSelectedCounty);
 
   // Format total cost for display
   const formatCost = (cost: number): { value: number; suffix: string } => {
