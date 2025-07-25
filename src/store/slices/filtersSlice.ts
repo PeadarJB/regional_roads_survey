@@ -1,5 +1,5 @@
 // src/store/slices/filtersSlice.ts
-// This slice manages the state for dashboard filters, such as the selected county.
+// FIXED: Manually trigger calculations when county filter changes
 
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
@@ -11,9 +11,16 @@ export interface FiltersSlice {
   setSelectedCounty: (county: string) => void;
 }
 
-export const createFiltersSlice: StateCreator<StoreState, [], [], FiltersSlice> = (set) => ({
+export const createFiltersSlice: StateCreator<StoreState, [], [], FiltersSlice> = (set, get) => ({
   availableCounties: [],
   selectedCounty: 'all',
   setAvailableCounties: (counties) => set({ availableCounties: counties }),
-  setSelectedCounty: (county) => set({ selectedCounty: county }),
+  setSelectedCounty: (county) => {
+    set({ selectedCounty: county });
+    // Manually trigger calculations after county filter changes
+    const state = get();
+    if (state.roadNetwork.length > 0) {
+      state.runCalculations();
+    }
+  },
 });
