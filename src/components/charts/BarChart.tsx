@@ -1,5 +1,5 @@
 // src/components/charts/BarChart.tsx
-// A reusable Chart.js bar chart component that's theme-aware and properly manages its lifecycle.
+// FIXED: Proper Chart.js registration and cleanup
 
 import React, { useRef, useEffect } from 'react';
 import { useTheme } from 'antd-style';
@@ -8,17 +8,19 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
+  BarController, // ADDED: Explicitly import BarController
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
 import type { ChartOptions, ChartData } from 'chart.js';
 
-// Register Chart.js components
+// FIXED: Register Chart.js components outside of component to avoid re-registration
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
+  BarController, // ADDED: Register BarController
   Title,
   Tooltip,
   Legend
@@ -38,9 +40,10 @@ const BarChart: React.FC<BarChartProps> = ({ data, options, height = 250 }) => {
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Destroy existing chart instance
+    // FIXED: Destroy existing chart instance properly
     if (chartRef.current) {
       chartRef.current.destroy();
+      chartRef.current = null;
     }
 
     // Create theme-aware default options
@@ -109,12 +112,16 @@ const BarChart: React.FC<BarChartProps> = ({ data, options, height = 250 }) => {
       }
     };
 
-    // Create new chart instance
-    chartRef.current = new ChartJS(canvasRef.current, {
-      type: 'bar',
-      data,
-      options: finalOptions
-    });
+    try {
+      // Create new chart instance
+      chartRef.current = new ChartJS(canvasRef.current, {
+        type: 'bar',
+        data,
+        options: finalOptions
+      });
+    } catch (error) {
+      console.error('Error creating chart:', error);
+    }
 
     // Cleanup function
     return () => {
