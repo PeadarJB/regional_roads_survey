@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1001,
+    "roadNumber": "R445",
+    "county": "Laois",
+    "iri": 4.5,
+    "rut": 8,
+    "psci": 7,
+    "csc": 0.45,
+    "mpd": 0.8
+  },
+  {
+    "id": 1002,
+    "roadNumber": "R675",
+    "county": "Waterford",
+    "iri": 13.1,
+    "rut": 22,
+    "psci": 3,
+    "csc": 0.30,
+    "mpd": 0.5
+  },
+  {
+    "id": 1003,
+    "roadNumber": "R752",
+    "county": "Wicklow",
+    "iri": 8.2,
+    "rut": 25,
+    "psci": 5,
+    "csc": 0.55,
+    "mpd": 1.1
+  },
+  {
+    "id": 1004,
+    "roadNumber": "R132",
+    "county": "Louth",
+    "iri": 2.5,
+    "rut": 5,
+    "psci": 9,
+    "csc": 0.6,
+    "mpd": 1.2
+  },
+  {
+    "id": 1005,
+    "roadNumber": "R586",
+    "county": "Cork",
+    "iri": 7.5,
+    "rut": 18,
+    "psci": 6,
+    "csc": 0.38,
+    "mpd": 0.7
+  },
+  {
+    "id": 1006,
+    "roadNumber": "R494",
+    "county": "Tipperary",
+    "iri": 6.1,
+    "rut": 12,
+    "psci": 5,
+    "csc": 0.32,
+    "mpd": 0.6
+  },
+  {
+    "id": 1007,
+    "roadNumber": "R336",
+    "county": "Galway",
+    "iri": 3.8,
+    "rut": 7,
+    "psci": 8,
+    "csc": 0.52,
+    "mpd": 0.9
+  }
+]
