@@ -1,5 +1,5 @@
 // src/App.tsx
-// This is the main application component. It handles theming, authentication, and data loading.
+// FIXED: Optimized selectors to prevent unnecessary re-renders
 
 import React, { useEffect } from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result } from 'antd';
@@ -39,18 +39,13 @@ const LoginScreen: React.FC = () => {
  * The MainDashboard component is the core application UI for authenticated users.
  */
 const MainDashboard: React.FC = () => {
-  const { logout, user } = usePavementStore((state) => ({
-    logout: state.logout,
-    user: state.user,
-  }));
-  const { loading, fetchRoadNetworkData } = usePavementStore((state) => ({
-    loading: state.loading,
-    fetchRoadNetworkData: state.fetchRoadNetworkData,
-  }));
-  const { themeMode, setThemeMode } = usePavementStore((state) => ({
-    themeMode: state.themeMode,
-    setThemeMode: state.setThemeMode,
-  }));
+  // Optimized selectors - extract individual values instead of creating objects
+  const logout = usePavementStore((state) => state.logout);
+  const user = usePavementStore((state) => state.user);
+  const loading = usePavementStore((state) => state.loading);
+  const fetchRoadNetworkData = usePavementStore((state) => state.fetchRoadNetworkData);
+  const themeMode = usePavementStore((state) => state.themeMode);
+  const setThemeMode = usePavementStore((state) => state.setThemeMode);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -96,10 +91,9 @@ const MainDashboard: React.FC = () => {
  * The root component that provides the theme and handles the authentication check.
  */
 const App: React.FC = () => {
-  const { themeMode, isAuthenticated } = usePavementStore((state) => ({
-    themeMode: state.themeMode,
-    isAuthenticated: state.isAuthenticated,
-  }));
+  // Optimized selectors
+  const themeMode = usePavementStore((state) => state.themeMode);
+  const isAuthenticated = usePavementStore((state) => state.isAuthenticated);
 
   return (
     <ThemeProvider theme={themeMode === 'dark' ? darkTheme : lightTheme}>
