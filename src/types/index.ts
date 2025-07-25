@@ -20,11 +20,28 @@ export interface RoadSegment {
  * Each key corresponds to a road condition parameter.
  */
 export interface MaintenanceParameters {
-  iri: number;
-  rut: number;
-  psci: number;
-  csc: number;
-  mpd: number;
+  // Road Reconstruction
+  roadReconstruction_iri: number;
+  roadReconstruction_rut: number;
+  roadReconstruction_psci: number;
+
+  // Structural Overlay
+  structuralOverlay_iri: number;
+  structuralOverlay_rut: number;
+  structuralOverlay_psci: number;
+
+  // Surface Restoration
+  surfaceRestoration_psci_a: number;
+  surfaceRestoration_psci_b: number;
+  surfaceRestoration_iri: number;
+  surfaceRestoration_psci_c: number;
+
+  // Restoration of Skid Resistance
+  skidResistance_psci_a: number;
+  skidResistance_psci_b: number;
+  skidResistance_csc: number;
+  skidResistance_psci_c: number;
+  skidResistance_mpd: number;
 }
 
 /**
