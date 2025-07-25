@@ -1,5 +1,5 @@
 // src/components/charts/MainCharts.tsx
-// This component contains the primary bar charts for the dashboard.
+// FIXED: Optimized selectors to prevent infinite loops
 
 import React from 'react';
 import { Card, Space } from 'antd';
@@ -9,11 +9,9 @@ import type { ChartData, ChartOptions } from 'chart.js';
 import type { MaintenanceCategory } from '../../types';
 
 const MainCharts: React.FC = () => {
-  // Get calculated data from the store
-  const { categoryLengths, categoryCosts } = usePavementStore((state) => ({
-    categoryLengths: state.categoryLengths,
-    categoryCosts: state.categoryCosts
-  }));
+  // FIXED: Use individual selectors to prevent infinite loops
+  const categoryLengths = usePavementStore((state) => state.categoryLengths);
+  const categoryCosts = usePavementStore((state) => state.categoryCosts);
 
   // Define category order and colors
   const categories: MaintenanceCategory[] = [
