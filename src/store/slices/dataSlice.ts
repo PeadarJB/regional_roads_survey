@@ -1,6 +1,5 @@
 // src/store/slices/dataSlice.ts
-// This slice manages the state for the raw road network data.
-// UPDATED to populate available counties after fetching.
+// FIXED: Manually trigger calculations after data fetch instead of using subscriptions
 
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
@@ -29,6 +28,9 @@ export const createDataSlice: StateCreator<StoreState, [], [], DataSlice> = (set
       get().setAvailableCounties(uniqueCounties);
 
       set({ roadNetwork: data, loading: false });
+      
+      // Manually trigger calculations after data is loaded
+      get().runCalculations();
     } catch (error) {
       console.error(error);
       set({ loading: false });
