@@ -8,19 +8,19 @@ import {
   CategoryScale,
   LinearScale,
   BarElement,
-  BarController, // ADDED: Explicitly import BarController
+  BarController, 
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
 import type { ChartOptions, ChartData } from 'chart.js';
 
-// FIXED: Register Chart.js components outside of component to avoid re-registration
+// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  BarController, // ADDED: Register BarController
+  BarController, 
   Title,
   Tooltip,
   Legend
