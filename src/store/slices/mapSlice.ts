@@ -61,8 +61,9 @@ export const createMapSlice: StateCreator<StoreState, [], [], MapSlice> = (set, 
       // Find the road network layer in the web map
       // You may need to adjust this based on the actual layer name in your web map
       const roadLayer = webMap.layers.find(layer => 
-        layer.title.toLowerCase().includes('road') || 
-        layer.title.toLowerCase().includes('network')
+        typeof layer.title === 'string' &&
+        (layer.title.toLowerCase().includes('road') || 
+         layer.title.toLowerCase().includes('network'))
       ) as FeatureLayer;
       
       if (!roadLayer) {
