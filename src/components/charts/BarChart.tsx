@@ -32,7 +32,7 @@ interface BarChartProps {
   height?: number;
 }
 
-const BarChart: React.FC<BarChartProps> = ({ data, options, height = 250 }) => {
+const BarChart: React.FC<BarChartProps> = ({ data, options, }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<ChartJS<'bar'> | null>(null);
   const theme = useTheme();
@@ -133,7 +133,7 @@ const BarChart: React.FC<BarChartProps> = ({ data, options, height = 250 }) => {
   }, [data, options, theme]);
 
   return (
-    <div style={{ height: `${height}px`, position: 'relative' }}>
+    <div style={{ height: `100%`, position: 'relative' }}>
       <canvas ref={canvasRef} />
     </div>
   );
