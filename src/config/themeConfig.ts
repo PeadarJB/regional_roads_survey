@@ -1,7 +1,4 @@
 // src/config/themeConfig.ts
-// This file defines the light and dark themes for the application using Ant Design's token system.
-// It is based on the robust theme configuration from the reference TII Flood Risk Dashboard project.
-
 import type { ThemeConfig } from 'antd';
 
 /**
@@ -10,7 +7,7 @@ import type { ThemeConfig } from 'antd';
 export const lightTheme: ThemeConfig = {
   token: {
     // Brand Colors
-    colorPrimary: '#0D47A1', // A deep, professional blue
+    colorPrimary: '#0D47A1',
     colorInfo: '#1890ff',
     colorSuccess: '#52c41a',
     colorWarning: '#faad14',
@@ -31,7 +28,7 @@ export const lightTheme: ThemeConfig = {
     fontSize: 14,
 
     // Sizing
-    borderRadius: 6,
+    borderRadius: 4, // Reduced border radius
   },
   components: {
     Layout: {
@@ -40,6 +37,7 @@ export const lightTheme: ThemeConfig = {
     },
     Card: {
       headerBg: '#fafafa',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)', // Added box shadow
     },
   },
 };
@@ -50,7 +48,7 @@ export const lightTheme: ThemeConfig = {
 export const darkTheme: ThemeConfig = {
   token: {
     // Brand Colors
-    colorPrimary: '#1890ff', // A brighter blue for dark backgrounds
+    colorPrimary: '#1890ff',
     colorInfo: '#1890ff',
     colorSuccess: '#52c41a',
     colorWarning: '#faad14',
@@ -71,7 +69,7 @@ export const darkTheme: ThemeConfig = {
     fontSize: 14,
 
     // Sizing
-    borderRadius: 6,
+    borderRadius: 4, // Reduced border radius
   },
   components: {
     Layout: {
@@ -80,6 +78,7 @@ export const darkTheme: ThemeConfig = {
     },
     Card: {
       headerBg: '#1f1f1f',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.2)', // Added box shadow
     },
   },
 };
