@@ -2,7 +2,7 @@
 // FIXED: Optimized selectors to prevent infinite loops
 
 import React from 'react';
-import { Card, Space } from 'antd';
+import { Card } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
 import BarChart from './BarChart';
 import type { ChartData, ChartOptions } from 'chart.js';
@@ -158,14 +158,18 @@ const MainCharts: React.FC = () => {
   };
 
   return (
-    <Space direction="vertical" style={{ width: '100%' }} size="large">
-      <Card title="Maintenance Category Length">
-        <BarChart data={lengthData} options={lengthOptions} height={250} />
-      </Card>
-      <Card title="Maintenance Category Costs">
-        <BarChart data={costsData} options={costsOptions} height={250} />
-      </Card>
-    </Space>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <Card title="Maintenance Category Length" style={{ height: '100%' }} bodyStyle={{ height: 'calc(100% - 57px)' }}>
+          <BarChart data={lengthData} options={lengthOptions} />
+        </Card>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, marginTop: '16px' }}>
+        <Card title="Maintenance Category Costs" style={{ height: '100%' }} bodyStyle={{ height: 'calc(100% - 57px)' }}>
+          <BarChart data={costsData} options={costsOptions} />
+        </Card>
+      </div>
+    </div>
   );
 };
 
