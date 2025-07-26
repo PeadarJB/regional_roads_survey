@@ -9,8 +9,8 @@ const MapPanel: React.FC = () => {
   return (
     <Card 
       title="Road Network Map" 
-      style={{ height: '100%' }}
-      bodyStyle={{ height: 'calc(100% - 57px)', padding: '12px' }}
+      style={{ height: '600px' }} // Set a fixed height
+      styles={{ body: { height: 'calc(100% - 57px)', padding: '12px' } }}
     >
       <MapComponent />
     </Card>
