@@ -9,7 +9,7 @@ import { usePavementStore } from './store/usePavementStore';
 import { lightTheme, darkTheme } from './config/themeConfig';
 import Dashboard from './components/Dashboard';
 
-const { Header, Footer } = Layout;
+const { Header } = Layout;
 const { Title, Text } = Typography;
 
 /**
@@ -80,9 +80,6 @@ const MainDashboard: React.FC = () => {
           <Dashboard />
         )}
       </Layout>
-      <Footer style={{ textAlign: 'center' }}>
-        Regional Roads Survey ©{new Date().getFullYear()}
-      </Footer>
     </Layout>
   );
 };
