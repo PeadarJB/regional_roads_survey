@@ -23,8 +23,8 @@ const Dashboard: React.FC = () => {
         style={{
           position: 'absolute',
           zIndex: 10,
-          height: 'calc(100% - 32px)',
-          margin: '16px',
+          height: 'calc(100% - 48px)',
+          margin: '24px',
           borderRadius: '8px',
           background: 'rgba(255, 255, 255, 0.7)',
           backdropFilter: 'blur(10px)',
@@ -34,14 +34,14 @@ const Dashboard: React.FC = () => {
         <ControlsSidebar collapsed={collapsed} />
       </Sider>
       <Content style={{ 
-          padding: '16px', 
-          marginLeft: collapsed ? collapsedSiderWidth : siderWidth,
+          padding: '24px', 
+          marginLeft: collapsed ? collapsedSiderWidth + 48 : siderWidth + 48,
           transition: 'margin-left 0.2s',
         }}>
-        <Row gutter={[16, 16]} style={{ height: '100%' }}>
+        <Row gutter={[24, 24]} style={{ height: '100%' }}>
           <Col xs={24} lg={12} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <SummaryCards />
-            <div style={{ flex: 1, minHeight: 0, marginTop: '16px' }}>
+            <div style={{ flex: 1, minHeight: 0, marginTop: '24px' }}>
               <MainCharts />
             </div>
           </Col>
