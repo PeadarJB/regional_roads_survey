@@ -1,6 +1,5 @@
-// src/components/Dashboard.tsx
-import React from 'react';
-import { Layout, Row, Col, Space } from 'antd';
+import React, { useState } from 'react';
+import { Layout, Row, Col } from 'antd';
 import ControlsSidebar from './controls/ControlsSidebar';
 import SummaryCards from './common/SummaryCards';
 import MainCharts from './charts/MainCharts';
@@ -9,33 +8,44 @@ import MapPanel from './map/MapPanel';
 const { Sider, Content } = Layout;
 
 const Dashboard: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  const siderWidth = 350;
+  const collapsedSiderWidth = 80;
+
   return (
-    <Layout style={{ height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
+    <Layout style={{ height: 'calc(100vh - 64px)', overflow: 'hidden', position: 'relative' }}>
       <Sider
-        width={350}
+        width={siderWidth}
         collapsible
+        collapsed={collapsed}
+        onCollapse={(value) => setCollapsed(value)}
         theme="light"
         style={{
           position: 'absolute',
           zIndex: 10,
-          height: '100%',
-          background: 'rgba(255, 255, 255, 0.8)',
+          height: 'calc(100% - 32px)',
+          margin: '16px',
+          borderRadius: '8px',
+          background: 'rgba(255, 255, 255, 0.7)',
           backdropFilter: 'blur(10px)',
-          borderRight: '1px solid #f0f0f0',
-          padding: '16px',
+          border: '1px solid #f0f0f0',
         }}
       >
-        <ControlsSidebar />
+        <ControlsSidebar collapsed={collapsed} />
       </Sider>
-      <Content style={{ padding: '24px' }}>
+      <Content style={{ 
+          padding: '16px', 
+          marginLeft: collapsed ? collapsedSiderWidth : siderWidth,
+          transition: 'margin-left 0.2s',
+        }}>
         <Row gutter={[16, 16]} style={{ height: '100%' }}>
-          <Col xs={24} lg={12}>
-            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <SummaryCards />
+          <Col xs={24} lg={12} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <SummaryCards />
+            <div style={{ flex: 1, minHeight: 0, marginTop: '16px' }}>
               <MainCharts />
-            </Space>
+            </div>
           </Col>
-          <Col xs={24} lg={12}>
+          <Col xs={24} lg={12} style={{ height: '100%' }}>
             <MapPanel />
           </Col>
         </Row>

@@ -1,17 +1,24 @@
-// src/components/controls/ControlsSidebar.tsx
-// This component will house all user-facing controls for parameters and costs.
-
 import React from 'react';
-import { Card, Typography } from 'antd';
+import { Card } from 'antd';
 
-const { Text } = Typography;
+interface ControlsSidebarProps {
+  collapsed: boolean;
+}
 
-const ControlsSidebar: React.FC = () => {
+const ControlsSidebar: React.FC<ControlsSidebarProps> = ({ collapsed }) => {
   return (
-    <Card title="Maintenance Parameters & Costs" style={{ height: '100%' }}>
-      <Text type="secondary">
-        Parameter and cost input controls will be placed here.
-      </Text>
+    <Card 
+      title="Parameters & Costs" 
+      style={{ 
+        height: '100%', 
+        background: 'transparent',
+        border: 'none',
+        opacity: collapsed ? 0 : 1,
+        transition: 'opacity 0.2s'
+      }}
+      headStyle={{ borderBottom: '1px solid #f0f0f0' }}
+    >
+      {/* Parameter and cost input controls will be placed here. */}
     </Card>
   );
 };
