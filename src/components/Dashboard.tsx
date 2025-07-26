@@ -1,6 +1,4 @@
 // src/components/Dashboard.tsx
-// This component assembles the complete UI layout for the main dashboard view.
-
 import React from 'react';
 import { Layout, Row, Col, Space } from 'antd';
 import ControlsSidebar from './controls/ControlsSidebar';
@@ -12,27 +10,35 @@ const { Sider, Content } = Layout;
 
 const Dashboard: React.FC = () => {
   return (
-    <Layout style={{ minHeight: 'calc(100vh - 64px)' }}>
+    <Layout style={{ height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
       <Sider
         width={350}
         collapsible
         theme="light"
-        style={{ padding: '16px', borderRight: '1px solid #f0f0f0' }}
+        style={{
+          position: 'absolute',
+          zIndex: 10,
+          height: '100%',
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderRight: '1px solid #f0f0f0',
+          padding: '16px',
+        }}
       >
         <ControlsSidebar />
       </Sider>
       <Content style={{ padding: '24px' }}>
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <SummaryCards />
-          <Row gutter={[24, 24]}>
-            <Col xs={24} lg={12}>
+        <Row gutter={[16, 16]} style={{ height: '100%' }}>
+          <Col xs={24} lg={12}>
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <SummaryCards />
               <MainCharts />
-            </Col>
-            <Col xs={24} lg={12}>
-              <MapPanel />
-            </Col>
-          </Row>
-        </Space>
+            </Space>
+          </Col>
+          <Col xs={24} lg={12}>
+            <MapPanel />
+          </Col>
+        </Row>
       </Content>
     </Layout>
   );
