@@ -8,11 +8,7 @@ import CostsSection from './CostsSection';
 
 const { Panel } = Collapse;
 
-interface ControlsSidebarProps {
-  collapsed: boolean;
-}
-
-const ControlsSidebar: React.FC<ControlsSidebarProps> = ({ collapsed }) => {
+const ControlsSidebar: React.FC = () => {
   const resetParameters = usePavementStore((state) => state.resetParameters);
   const resetCosts = usePavementStore((state) => state.resetCosts);
 
@@ -20,15 +16,21 @@ const ControlsSidebar: React.FC<ControlsSidebarProps> = ({ collapsed }) => {
     <Card 
       title="Parameters & Costs" 
       style={{ 
-        height: '100%', 
-        background: 'transparent',
-        border: 'none',
-        opacity: collapsed ? 0 : 1,
-        transition: 'opacity 0.2s'
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
       }}
       styles={{
-        header: { borderBottom: '1px solid #f0f0f0' },
-        body: { padding: '0 16px 16px' },
+        header: { 
+          borderBottom: '1px solid #f0f0f0',
+          flexShrink: 0
+        },
+        body: { 
+          padding: '0 16px 16px',
+          overflowY: 'auto',
+          flex: 1,
+          minHeight: 0
+        },
       }}
     >
       <Form layout="horizontal" colon={false}>

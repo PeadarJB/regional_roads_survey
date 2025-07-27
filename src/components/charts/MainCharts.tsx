@@ -160,12 +160,12 @@ const MainCharts: React.FC = () => {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Card title="Maintenance Category Length" style={{ height: '100%' }} bodyStyle={{ height: 'calc(100% - 57px)' }}>
+        <Card title="Maintenance Category Length" style={{ height: '100%' }} styles={{ body: { height: 'calc(100% - 57px)' } }}>
           <BarChart data={lengthData} options={lengthOptions} />
         </Card>
       </div>
       <div style={{ flex: 1, minHeight: 0, marginTop: '16px' }}>
-        <Card title="Maintenance Category Costs" style={{ height: '100%' }} bodyStyle={{ height: 'calc(100% - 57px)' }}>
+        <Card title="Maintenance Category Costs" style={{ height: '100%' }} styles={{ body: { height: 'calc(100% - 57px)' } }}>
           <BarChart data={costsData} options={costsOptions} />
         </Card>
       </div>
