@@ -26,8 +26,10 @@ const ControlsSidebar: React.FC<ControlsSidebarProps> = ({ collapsed }) => {
         opacity: collapsed ? 0 : 1,
         transition: 'opacity 0.2s'
       }}
-      headStyle={{ borderBottom: '1px solid #f0f0f0' }}
-      bodyStyle={{ padding: '0 16px 16px' }}
+      styles={{
+        header: { borderBottom: '1px solid #f0f0f0' },
+        body: { padding: '0 16px 16px' },
+      }}
     >
       <Form layout="horizontal" colon={false}>
         <Collapse 
