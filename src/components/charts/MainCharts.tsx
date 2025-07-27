@@ -112,7 +112,7 @@ const MainCharts: React.FC = () => {
           minRotation: 0,
           autoSkip: false,
           font: {
-            size: 10
+            size: 8
           }
         }
       }
@@ -150,7 +150,7 @@ const MainCharts: React.FC = () => {
           minRotation: 0,
           autoSkip: false,
           font: {
-            size: 10
+            size: 8
           }
         }
       }
