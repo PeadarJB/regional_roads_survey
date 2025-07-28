@@ -18,3 +18,85 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Mobile-specific styles */
+@media (max-width: 767px) {
+  /* Adjust Ant Tabs for mobile */
+  .mobile-tabs .ant-tabs-content {
+    height: 100%;
+  }
+  
+  .mobile-tabs .ant-tabs-tabpane {
+    height: 100%;
+  }
+  
+  /* Reduce padding on mobile */
+  .ant-card {
+    margin-bottom: 8px;
+  }
+  
+  .ant-card-body {
+    padding: 12px;
+  }
+  
+  /* Adjust statistic component for mobile */
+  .ant-statistic-title {
+    font-size: 12px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 20px;
+  }
+  
+  /* Make select dropdown full width on mobile */
+  .ant-select {
+    width: 100% !important;
+  }
+  
+  /* Adjust chart container heights */
+  .ant-card:has(canvas) {
+    height: 300px !important;
+  }
+  
+  /* Touch-friendly button sizes */
+  .ant-btn {
+    min-height: 44px;
+    padding: 8px 16px;
+  }
+  
+  .ant-btn-icon-only {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  /* Drawer styles */
+  .ant-drawer-body {
+    padding: 16px;
+  }
+  
+  /* Form adjustments for mobile */
+  .ant-form-item {
+    margin-bottom: 8px;
+  }
+  
+  .ant-form-item-label {
+    padding-bottom: 4px;
+  }
+  
+  /* Input number adjustments */
+  .ant-input-number {
+    width: 100% !important;
+  }
+  
+  /* Collapse panel adjustments */
+  .ant-collapse-header {
+    padding: 12px 16px !important;
+  }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .ant-card-body {
+    padding: 16px;
+  }
+}
