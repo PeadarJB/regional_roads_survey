@@ -2,7 +2,7 @@
 // This component handles the ArcGIS Map rendering and lifecycle
 
 import React, { useEffect, useRef } from 'react';
-import { Typography } from 'antd';
+import { Typography, Tag } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
 import MapController from './MapController';
 
@@ -13,6 +13,8 @@ const MapComponent: React.FC = () => {
   const initializeMap = usePavementStore((state) => state.initializeMap);
   const clearMap = usePavementStore((state) => state.clearMap);
   const selectedCategory = usePavementStore((state) => state.selectedCategory);
+  const setSelectedCategory = usePavementStore((state) => state.setSelectedCategory);
+  const isMobileView = usePavementStore((state) => state.isMobileView);
 
   // Initialize map on mount
   useEffect(() => {
@@ -43,20 +45,44 @@ const MapComponent: React.FC = () => {
           <div
             style={{
               position: 'absolute',
-              top: 16,
-              left: 16,
-              right: 16,
+              top: isMobileView ? 8 : 16,
+              left: isMobileView ? 8 : 16,
+              right: isMobileView ? 8 : 16,
               background: 'rgba(255, 255, 255, 0.9)',
-              padding: '8px 16px',
+              padding: isMobileView ? '6px 12px' : '8px 16px',
               borderRadius: '4px',
               zIndex: 10,
               textAlign: 'center',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
           >
-            <Text type="secondary">
-              Click on a chart bar or select a filter to highlight specific road sections
+            <Text type="secondary" style={{ fontSize: isMobileView ? 12 : 14 }}>
+              {isMobileView ? 'Tap a chart bar to filter' : 'Click on a chart bar or select a filter to highlight specific road sections'}
             </Text>
+          </div>
+        )}
+        
+        {/* Show selected category */}
+        {selectedCategory && (
+          <div
+            style={{
+              position: 'absolute',
+              top: isMobileView ? 8 : 16,
+              left: isMobileView ? 8 : 16,
+              zIndex: 10,
+            }}
+          >
+            <Tag 
+              color="blue" 
+              closable 
+              onClose={() => setSelectedCategory(null)}
+              style={{ 
+                fontSize: isMobileView ? 12 : 14,
+                padding: isMobileView ? '2px 8px' : '4px 12px'
+              }}
+            >
+              Showing: {selectedCategory}
+            </Tag>
           </div>
         )}
       </div>
