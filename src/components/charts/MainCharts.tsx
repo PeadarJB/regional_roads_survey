@@ -1,13 +1,29 @@
 // src/components/charts/MainCharts.tsx
-// FIXED: Optimized selectors to prevent infinite loops
-// UPDATED: Added click interactions for map filtering
+// FIXED: Memoized chart data and options to prevent unnecessary recreations
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { Card } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
-import BarChart from './BarChart';
+import DebouncedChart from './DebouncedChart';
 import type { ChartData, ChartOptions, ChartEvent, ActiveElement } from 'chart.js';
 import type { MaintenanceCategory } from '../../types';
+
+// Constants moved outside component since they never change
+const CATEGORIES: MaintenanceCategory[] = [
+  'Road Reconstruction',
+  'Structural Overlay',
+  'Surface Restoration',
+  'Restoration of Skid Resistance',
+  'Routine Maintenance'
+];
+
+const CATEGORY_COLORS = {
+  'Road Reconstruction': '#ff4d4f',
+  'Structural Overlay': '#ff7a45',
+  'Surface Restoration': '#40a9ff',
+  'Restoration of Skid Resistance': '#73d13d',
+  'Routine Maintenance': '#36cfc9'
+} as const;
 
 const MainCharts: React.FC = () => {
   // FIXED: Use individual selectors to prevent infinite loops
@@ -17,38 +33,21 @@ const MainCharts: React.FC = () => {
   const setSelectedCategory = usePavementStore((state) => state.setSelectedCategory);
   const isMobileView = usePavementStore((state) => state.isMobileView);
 
-  // Define category order and colors
-  const categories: MaintenanceCategory[] = [
-    'Road Reconstruction',
-    'Structural Overlay',
-    'Surface Restoration',
-    'Restoration of Skid Resistance',
-    'Routine Maintenance'
-  ];
-
-  const categoryColors = {
-    'Road Reconstruction': '#ff4d4f',
-    'Structural Overlay': '#ff7a45',
-    'Surface Restoration': '#40a9ff',
-    'Restoration of Skid Resistance': '#73d13d',
-    'Routine Maintenance': '#36cfc9'
-  };
-
-  // Highlight selected category
-  const getBackgroundColors = () => {
-    return categories.map(cat => {
-      const baseColor = categoryColors[cat];
+  // Memoize background colors calculation
+  const backgroundColors = useMemo(() => {
+    return CATEGORIES.map(cat => {
+      const baseColor = CATEGORY_COLORS[cat];
       // If a category is selected, dim others
       if (selectedCategory) {
         return cat === selectedCategory ? baseColor : baseColor + '40'; // 40 = 25% opacity
       }
       return baseColor;
     });
-  };
+  }, [selectedCategory]);
 
-  // Prepare data for the length chart
-  const lengthData: ChartData<'bar'> = {
-    labels: categories.map(cat => {
+  // Memoize label calculation
+  const chartLabels = useMemo(() => {
+    return CATEGORIES.map(cat => {
       // Shorten labels for better display
       const shortLabels: Record<MaintenanceCategory, string> = {
         'Road Reconstruction': isMobileView ? 'ROAD\nRECON' : 'ROAD RECONSTRUCTION',
@@ -58,43 +57,38 @@ const MainCharts: React.FC = () => {
         'Routine Maintenance': isMobileView ? 'ROUTINE\nMAINT' : 'ROUTINE MAINTENANCE'
       };
       return shortLabels[cat];
-    }),
+    });
+  }, [isMobileView]);
+
+  // Memoize length data
+  const lengthData: ChartData<'bar'> = useMemo(() => ({
+    labels: chartLabels,
     datasets: [{
-      data: categories.map(cat => categoryLengths[cat]),
-      backgroundColor: getBackgroundColors(),
+      data: CATEGORIES.map(cat => categoryLengths[cat]),
+      backgroundColor: backgroundColors,
       borderWidth: 0,
       barPercentage: 0.8,
       categoryPercentage: 0.9
     }]
-  };
+  }), [chartLabels, categoryLengths, backgroundColors]);
 
-  // Prepare data for the costs chart
-  const costsData: ChartData<'bar'> = {
-    labels: categories.map(cat => {
-      // Shorten labels for better display
-      const shortLabels: Record<MaintenanceCategory, string> = {
-        'Road Reconstruction': isMobileView ? 'ROAD\nRECON' : 'ROAD RECONSTRUCTION',
-        'Structural Overlay': isMobileView ? 'STRUCT\nOVERLAY' : 'STRUCTURAL OVERLAY',
-        'Surface Restoration': isMobileView ? 'SURFACE\nRESTORE' : 'SURFACE RESTORATION',
-        'Restoration of Skid Resistance': isMobileView ? 'SKID\nRESIST' : 'RESTORATION OF SKID\nRESISTANCE',
-        'Routine Maintenance': isMobileView ? 'ROUTINE\nMAINT' : 'ROUTINE MAINTENANCE'
-      };
-      return shortLabels[cat];
-    }),
+  // Memoize costs data
+  const costsData: ChartData<'bar'> = useMemo(() => ({
+    labels: chartLabels,
     datasets: [{
-      data: categories.map(cat => categoryCosts[cat] / 1e9), // Convert to billions
-      backgroundColor: getBackgroundColors(),
+      data: CATEGORIES.map(cat => categoryCosts[cat] / 1e9), // Convert to billions
+      backgroundColor: backgroundColors,
       borderWidth: 0,
       barPercentage: 0.8,
       categoryPercentage: 0.9
     }]
-  };
+  }), [chartLabels, categoryCosts, backgroundColors]);
 
-  // Handle chart click
-  const handleChartClick = (_event: ChartEvent, elements: ActiveElement[]) => {
+  // Handle chart click with useCallback to prevent recreation
+  const handleChartClick = useCallback((_event: ChartEvent, elements: ActiveElement[]) => {
     if (elements.length > 0) {
       const index = elements[0].index;
-      const clickedCategory = categories[index];
+      const clickedCategory = CATEGORIES[index];
       
       // Toggle selection
       if (selectedCategory === clickedCategory) {
@@ -106,17 +100,17 @@ const MainCharts: React.FC = () => {
       // Clicked outside bars - clear selection
       setSelectedCategory(null);
     }
-  };
+  }, [selectedCategory, setSelectedCategory]);
 
-  // Chart options for length chart
-  const lengthOptions: ChartOptions<'bar'> = {
+  // Memoize chart options for length chart
+  const lengthOptions: ChartOptions<'bar'> = useMemo(() => ({
     onClick: handleChartClick,
     plugins: {
       tooltip: {
         callbacks: {
           label: (context) => {
             const value = context.parsed.y;
-            const total = categories.reduce((sum, cat) => sum + categoryLengths[cat], 0);
+            const total = CATEGORIES.reduce((sum, cat) => sum + categoryLengths[cat], 0);
             const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
             return [
               `Length: ${value.toFixed(0)} km`,
@@ -135,7 +129,7 @@ const MainCharts: React.FC = () => {
         },
         ticks: {
           callback: function(value) {
-            const total = categories.reduce((sum, cat) => sum + categoryLengths[cat], 0);
+            const total = CATEGORIES.reduce((sum, cat) => sum + categoryLengths[cat], 0);
             const percentage = total > 0 ? ((Number(value) / total) * 100).toFixed(0) : '0';
             return percentage + '%';
           }
@@ -152,10 +146,10 @@ const MainCharts: React.FC = () => {
         }
       }
     }
-  };
+  }), [handleChartClick, categoryLengths, isMobileView]);
 
-  // Chart options for costs chart
-  const costsOptions: ChartOptions<'bar'> = {
+  // Memoize chart options for costs chart
+  const costsOptions: ChartOptions<'bar'> = useMemo(() => ({
     onClick: handleChartClick,
     plugins: {
       tooltip: {
@@ -191,7 +185,7 @@ const MainCharts: React.FC = () => {
         }
       }
     }
-  };
+  }), [handleChartClick, isMobileView]);
 
   // Mobile layout
   if (isMobileView) {
@@ -203,7 +197,7 @@ const MainCharts: React.FC = () => {
           style={{ height: '280px' }} 
           styles={{ body: { height: 'calc(100% - 38px)' } }}
         >
-          <BarChart data={lengthData} options={lengthOptions} />
+          <DebouncedChart data={lengthData} options={lengthOptions} debounceMs={150} />
         </Card>
         <Card 
           title="Maintenance Category Costs" 
@@ -211,7 +205,7 @@ const MainCharts: React.FC = () => {
           style={{ height: '280px' }} 
           styles={{ body: { height: 'calc(100% - 38px)' } }}
         >
-          <BarChart data={costsData} options={costsOptions} />
+          <DebouncedChart data={costsData} options={costsOptions} debounceMs={150} />
         </Card>
       </div>
     );
@@ -222,12 +216,12 @@ const MainCharts: React.FC = () => {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, minHeight: 0 }}>
         <Card title="Maintenance Category Length" style={{ height: '100%' }} styles={{ body: { height: 'calc(100% - 57px)' } }}>
-          <BarChart data={lengthData} options={lengthOptions} />
+          <DebouncedChart data={lengthData} options={lengthOptions} debounceMs={150} />
         </Card>
       </div>
       <div style={{ flex: 1, minHeight: 0, marginTop: '16px' }}>
         <Card title="Maintenance Category Costs" style={{ height: '100%' }} styles={{ body: { height: 'calc(100% - 57px)' } }}>
-          <BarChart data={costsData} options={costsOptions} />
+          <DebouncedChart data={costsData} options={costsOptions} debounceMs={150} />
         </Card>
       </div>
     </div>
