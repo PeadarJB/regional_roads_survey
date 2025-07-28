@@ -50,6 +50,10 @@ const BarChart: React.FC<BarChartProps> = ({ data, options, }) => {
     const themeOptions: ChartOptions<'bar'> = {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
       plugins: {
         legend: {
           display: false,
@@ -133,7 +137,7 @@ const BarChart: React.FC<BarChartProps> = ({ data, options, }) => {
   }, [data, options, theme]);
 
   return (
-    <div style={{ height: `100%`, position: 'relative' }}>
+    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
       <canvas ref={canvasRef} />
     </div>
   );
