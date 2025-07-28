@@ -12,6 +12,7 @@ import { type ParametersSlice, createParametersSlice } from './slices/parameters
 import { type FiltersSlice, createFiltersSlice } from './slices/filtersSlice';
 import { type CalculationsSlice, createCalculationsSlice } from './slices/calculationsSlice';
 import { type MapSlice, createMapSlice } from './slices/mapSlice';
+import { type UISlice, createUISlice } from './slices/uiSlice';
 
 
 /**
@@ -24,7 +25,8 @@ export type StoreState = DataSlice &
   ParametersSlice &
   FiltersSlice &
   CalculationsSlice &
-  MapSlice;
+  MapSlice &
+  UISlice;
 
 // --- MAIN STORE CREATION ---
 
@@ -40,6 +42,7 @@ export const usePavementStore = create<StoreState>()(
           ...createFiltersSlice(...a),
           ...createCalculationsSlice(...a),
           ...createMapSlice(...a),
+          ...createUISlice(...a),
         }),
         {
           name: 'pavement-dashboard-storage', // name of the item in the storage (must be unique)
