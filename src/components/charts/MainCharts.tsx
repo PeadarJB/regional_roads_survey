@@ -1,17 +1,21 @@
 // src/components/charts/MainCharts.tsx
 // FIXED: Optimized selectors to prevent infinite loops
+// UPDATED: Added click interactions for map filtering
 
 import React from 'react';
 import { Card } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
 import BarChart from './BarChart';
-import type { ChartData, ChartOptions } from 'chart.js';
+import type { ChartData, ChartOptions, ChartEvent, ActiveElement } from 'chart.js';
 import type { MaintenanceCategory } from '../../types';
 
 const MainCharts: React.FC = () => {
   // FIXED: Use individual selectors to prevent infinite loops
   const categoryLengths = usePavementStore((state) => state.categoryLengths);
   const categoryCosts = usePavementStore((state) => state.categoryCosts);
+  const selectedCategory = usePavementStore((state) => state.selectedCategory);
+  const setSelectedCategory = usePavementStore((state) => state.setSelectedCategory);
+  const isMobileView = usePavementStore((state) => state.isMobileView);
 
   // Define category order and colors
   const categories: MaintenanceCategory[] = [
@@ -30,22 +34,34 @@ const MainCharts: React.FC = () => {
     'Routine Maintenance': '#36cfc9'
   };
 
+  // Highlight selected category
+  const getBackgroundColors = () => {
+    return categories.map(cat => {
+      const baseColor = categoryColors[cat];
+      // If a category is selected, dim others
+      if (selectedCategory) {
+        return cat === selectedCategory ? baseColor : baseColor + '40'; // 40 = 25% opacity
+      }
+      return baseColor;
+    });
+  };
+
   // Prepare data for the length chart
   const lengthData: ChartData<'bar'> = {
     labels: categories.map(cat => {
       // Shorten labels for better display
       const shortLabels: Record<MaintenanceCategory, string> = {
-        'Road Reconstruction': 'ROAD RECONSTRUCTION',
-        'Structural Overlay': 'STRUCTURAL OVERLAY',
-        'Surface Restoration': 'SURFACE RESTORATION',
-        'Restoration of Skid Resistance': 'RESTORATION OF SKID\nRESISTANCE',
-        'Routine Maintenance': 'ROUTINE MAINTENANCE'
+        'Road Reconstruction': isMobileView ? 'ROAD\nRECON' : 'ROAD RECONSTRUCTION',
+        'Structural Overlay': isMobileView ? 'STRUCT\nOVERLAY' : 'STRUCTURAL OVERLAY',
+        'Surface Restoration': isMobileView ? 'SURFACE\nRESTORE' : 'SURFACE RESTORATION',
+        'Restoration of Skid Resistance': isMobileView ? 'SKID\nRESIST' : 'RESTORATION OF SKID\nRESISTANCE',
+        'Routine Maintenance': isMobileView ? 'ROUTINE\nMAINT' : 'ROUTINE MAINTENANCE'
       };
       return shortLabels[cat];
     }),
     datasets: [{
       data: categories.map(cat => categoryLengths[cat]),
-      backgroundColor: categories.map(cat => categoryColors[cat]),
+      backgroundColor: getBackgroundColors(),
       borderWidth: 0,
       barPercentage: 0.8,
       categoryPercentage: 0.9
@@ -57,25 +73,44 @@ const MainCharts: React.FC = () => {
     labels: categories.map(cat => {
       // Shorten labels for better display
       const shortLabels: Record<MaintenanceCategory, string> = {
-        'Road Reconstruction': 'ROAD RECONSTRUCTION',
-        'Structural Overlay': 'STRUCTURAL OVERLAY',
-        'Surface Restoration': 'SURFACE RESTORATION',
-        'Restoration of Skid Resistance': 'RESTORATION OF SKID\nRESISTANCE',
-        'Routine Maintenance': 'ROUTINE MAINTENANCE'
+        'Road Reconstruction': isMobileView ? 'ROAD\nRECON' : 'ROAD RECONSTRUCTION',
+        'Structural Overlay': isMobileView ? 'STRUCT\nOVERLAY' : 'STRUCTURAL OVERLAY',
+        'Surface Restoration': isMobileView ? 'SURFACE\nRESTORE' : 'SURFACE RESTORATION',
+        'Restoration of Skid Resistance': isMobileView ? 'SKID\nRESIST' : 'RESTORATION OF SKID\nRESISTANCE',
+        'Routine Maintenance': isMobileView ? 'ROUTINE\nMAINT' : 'ROUTINE MAINTENANCE'
       };
       return shortLabels[cat];
     }),
     datasets: [{
       data: categories.map(cat => categoryCosts[cat] / 1e9), // Convert to billions
-      backgroundColor: categories.map(cat => categoryColors[cat]),
+      backgroundColor: getBackgroundColors(),
       borderWidth: 0,
       barPercentage: 0.8,
       categoryPercentage: 0.9
     }]
   };
 
+  // Handle chart click
+  const handleChartClick = (_event: ChartEvent, elements: ActiveElement[]) => {
+    if (elements.length > 0) {
+      const index = elements[0].index;
+      const clickedCategory = categories[index];
+      
+      // Toggle selection
+      if (selectedCategory === clickedCategory) {
+        setSelectedCategory(null);
+      } else {
+        setSelectedCategory(clickedCategory);
+      }
+    } else {
+      // Clicked outside bars - clear selection
+      setSelectedCategory(null);
+    }
+  };
+
   // Chart options for length chart
   const lengthOptions: ChartOptions<'bar'> = {
+    onClick: handleChartClick,
     plugins: {
       tooltip: {
         callbacks: {
@@ -95,7 +130,7 @@ const MainCharts: React.FC = () => {
       y: {
         beginAtZero: true,
         title: {
-          display: true,
+          display: !isMobileView,
           text: '% of Total'
         },
         ticks: {
@@ -112,7 +147,7 @@ const MainCharts: React.FC = () => {
           minRotation: 0,
           autoSkip: false,
           font: {
-            size: 8
+            size: isMobileView ? 7 : 8
           }
         }
       }
@@ -121,6 +156,7 @@ const MainCharts: React.FC = () => {
 
   // Chart options for costs chart
   const costsOptions: ChartOptions<'bar'> = {
+    onClick: handleChartClick,
     plugins: {
       tooltip: {
         callbacks: {
@@ -135,7 +171,7 @@ const MainCharts: React.FC = () => {
       y: {
         beginAtZero: true,
         title: {
-          display: true,
+          display: !isMobileView,
           text: 'Cost (bil)'
         },
         ticks: {
@@ -150,13 +186,38 @@ const MainCharts: React.FC = () => {
           minRotation: 0,
           autoSkip: false,
           font: {
-            size: 8
+            size: isMobileView ? 7 : 8
           }
         }
       }
     }
   };
 
+  // Mobile layout
+  if (isMobileView) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '16px 0' }}>
+        <Card 
+          title="Maintenance Category Length" 
+          size="small"
+          style={{ height: '280px' }} 
+          styles={{ body: { height: 'calc(100% - 38px)' } }}
+        >
+          <BarChart data={lengthData} options={lengthOptions} />
+        </Card>
+        <Card 
+          title="Maintenance Category Costs" 
+          size="small"
+          style={{ height: '280px' }} 
+          styles={{ body: { height: 'calc(100% - 38px)' } }}
+        >
+          <BarChart data={costsData} options={costsOptions} />
+        </Card>
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, minHeight: 0 }}>
