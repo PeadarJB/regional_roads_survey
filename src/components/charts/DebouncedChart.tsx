@@ -1,5 +1,5 @@
 // src/components/charts/DebouncedChart.tsx
-// Wrapper to debounce chart updates and prevent rapid re-renders
+// FIXED: Provided a default value for the options prop to prevent passing `undefined` to the BarChart component.
 
 import React, { useState, useEffect, useRef } from 'react';
 import BarChart from './BarChart';
@@ -14,11 +14,12 @@ interface DebouncedChartProps {
 
 const DebouncedChart: React.FC<DebouncedChartProps> = ({ 
   data, 
-  options, 
+  options = {}, // Default options to an empty object if not provided
   debounceMs = 100 
 }) => {
   const [debouncedData, setDebouncedData] = useState(data);
-  const [debouncedOptions, setDebouncedOptions] = useState<ChartOptions<'bar'> | undefined>(options);
+  // Initialize state with a guaranteed value, preventing it from being undefined.
+  const [debouncedOptions, setDebouncedOptions] = useState<ChartOptions<'bar'>>(options);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 
@@ -42,7 +43,7 @@ const DebouncedChart: React.FC<DebouncedChartProps> = ({
     };
   }, [data, options, debounceMs]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - this effect can be combined with the one above, but is fine as is.
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -53,6 +54,7 @@ const DebouncedChart: React.FC<DebouncedChartProps> = ({
 
   return (
     <ChartErrorBoundary>
+      {/* This is now type-safe as debouncedOptions is guaranteed to be an object. */}
       <BarChart data={debouncedData} options={debouncedOptions} />
     </ChartErrorBoundary>
   );
