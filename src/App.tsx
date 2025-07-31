@@ -1,6 +1,4 @@
 // src/App.tsx
-// FIXED: Import ReportData and remove unused MaintenanceCategory import
-
 import React, { useEffect } from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result, Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
@@ -42,20 +40,41 @@ const LoginScreen: React.FC = () => {
         background: theme.colorBgLayout,
       }}
     >
-      <Result
-        icon={<LoginOutlined style={{ color: theme.colorPrimary }} />}
-        title="Regional Roads Survey Dashboard"
-        subTitle="Please log in to access the dashboard."
-        extra={
-          <Button
-            type="primary"
-            size="large"
-            onClick={() => login({ username: 'RMO_User' })}
-          >
-            Log In
-          </Button>
-        }
-      />
+      <div style={{ textAlign: 'center' }}>
+        {/* Organization Logos */}
+        <Space size="large" style={{ marginBottom: 32 }}>
+          <img 
+            src="/img/dtts-logo.png" 
+            alt="Department of Transport, Tourism and Sport" 
+            style={{ height: 60 }}
+          />
+          <img 
+            src="/img/rmo-logo.png" 
+            alt="Regional & Local Roads Management Office" 
+            style={{ height: 60 }}
+          />
+          <img 
+            src="/img/pvs-logo.png" 
+            alt="PVS" 
+            style={{ height: 60 }}
+          />
+        </Space>
+        
+        <Result
+          icon={<LoginOutlined style={{ color: theme.colorPrimary }} />}
+          title="Regional Roads Survey Dashboard"
+          subTitle="Please log in to access the dashboard."
+          extra={
+            <Button
+              type="primary"
+              size="large"
+              onClick={() => login({ username: 'RMO_User' })}
+            >
+              Log In
+            </Button>
+          }
+        />
+      </div>
     </Layout>
   );
 };
@@ -127,6 +146,7 @@ const MainDashboard: React.FC = () => {
         categoryCosts,
       };
       generateCsvReport(reportData);
+      message.success('CSV Data downloaded!');
     } catch (error) {
       console.error("Failed to generate CSV report:", error);
       message.error('Failed to generate CSV.');
@@ -172,9 +192,30 @@ const MainDashboard: React.FC = () => {
               aria-label="Toggle parameters drawer"
             />
           )}
-          <Title level={4} style={{ color: headerTextColor, margin: 0 }}>
-            RMO Dashboard
-          </Title>
+          {!isMobileView && (
+            <>
+              <img 
+                src="/img/dtts-logo.png" 
+                alt="DTTS" 
+                style={{ height: 32, marginRight: 8 }}
+              />
+              <img 
+                src="/img/rmo-logo.png" 
+                alt="RMO" 
+                style={{ height: 32, marginRight: 8 }}
+              />
+              <img 
+                src="/img/pvs-logo.png" 
+                alt="PVS" 
+                style={{ height: 32, marginRight: 16 }}
+              />
+            </>
+          )}
+          {!isMobileView && (
+            <Title level={4} style={{ color: headerTextColor, margin: 0 }}>
+              RMO Dashboard
+            </Title>
+          )}
         </Space>
         <Space>
           {!isMobileView && (
@@ -184,7 +225,7 @@ const MainDashboard: React.FC = () => {
           )}
           <Dropdown menu={{ items: menuItems }} placement="bottomRight">
             <Button icon={<DownloadOutlined />} loading={isGeneratingReport}>
-              Generate Report
+              {!isMobileView && 'Generate Report'}
             </Button>
           </Dropdown>
           <Switch
