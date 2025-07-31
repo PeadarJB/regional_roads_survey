@@ -44,17 +44,17 @@ const LoginScreen: React.FC = () => {
         {/* Organization Logos */}
         <Space size="large" style={{ marginBottom: 32 }}>
           <img 
-            src="/img/dtts-logo.png" 
+            src="/img/DoT_logo.png" 
             alt="Department of Transport, Tourism and Sport" 
             style={{ height: 60 }}
           />
           <img 
-            src="/img/rmo-logo.png" 
+            src="/img/RMO-Logo-rebrand.png" 
             alt="Regional & Local Roads Management Office" 
             style={{ height: 60 }}
           />
           <img 
-            src="/img/pvs-logo.png" 
+            src="/img/PMS-Logo.png" 
             alt="PVS" 
             style={{ height: 60 }}
           />
