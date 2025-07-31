@@ -20,18 +20,18 @@ const ParametersDrawer: React.FC = () => {
     <Space direction="vertical" align="center" style={{ width: '100%' }}>
       <Space size="middle" style={{ marginBottom: 8 }}>
         <img 
-          src="/img/dtts-logo.png" 
+          src='/img/DoT_Logo.png' 
           alt="DTTS" 
           style={{ height: 24 }}
         />
         <img 
-          src="/img/rmo-logo.png" 
+          src='/img/RMO-Logo-rebrand.jpg' 
           alt="RMO" 
           style={{ height: 24 }}
         />
         <img 
-          src="/img/pvs-logo.png" 
-          alt="PVS" 
+          src='/img/PMS-Logo.png'
+          alt="PMS" 
           style={{ height: 24 }}
         />
       </Space>
