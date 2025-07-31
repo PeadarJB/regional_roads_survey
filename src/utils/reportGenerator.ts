@@ -1,7 +1,15 @@
 // src/utils/reportGenerator.ts
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
 import type { MaintenanceParameters, CostInputs, MaintenanceCategory } from '../types';
+
+// Logo paths - these should be placed in the public/img directory
+const LOGO_PATHS = {
+  dtts: '/img/DoT_Logo.png',
+  rmo: '/img/RMO-Logo-rebrand.png',
+  pvs: '/img/PMS-Logo.png'
+};
 
 export interface ReportData {
   totalCost: number;
@@ -14,41 +22,44 @@ export interface ReportData {
 }
 
 /**
- * Generates a PDF report of the current dashboard state
+ * Converts an image URL to base64 format
+ */
+const getImageBase64 = async (url: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+};
+
+/**
+ * Generates a professional PDF report of the current dashboard state
  */
 export const generatePdfReport = async (data: ReportData): Promise<void> => {
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
-  let yPosition = 20;
-  const timestamp = new Date().toLocaleString();
+  const timestamp = new Date().toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
-  // Title
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Regional Road Survey Report', pageWidth / 2, yPosition, { align: 'center' });
-  
-  yPosition += 15;
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'normal');
-  const countyText = data.selectedCounty === 'all' ? 'All Counties' : data.selectedCounty;
-  doc.text(`Local Authority: ${countyText}`, pageWidth / 2, yPosition, { align: 'center' });
-  
-  yPosition += 10;
-  doc.setFontSize(12);
-  doc.text(`Generated: ${timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
-  
-  // Summary Section
-  yPosition += 20;
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Executive Summary', margin, yPosition);
-  
-  yPosition += 10;
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  
   // Format cost with appropriate units
   const formatCost = (cost: number): string => {
     if (cost >= 1e9) {
@@ -60,15 +71,85 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     }
     return `€${cost.toFixed(2)}`;
   };
+
+  // Load logos
+  let logos: { dtts?: string; rmo?: string; pvs?: string } = {};
+  try {
+    const [dttsLogo, rmoLogo, pvsLogo] = await Promise.all([
+      getImageBase64(LOGO_PATHS.dtts),
+      getImageBase64(LOGO_PATHS.rmo),
+      getImageBase64(LOGO_PATHS.pvs)
+    ]);
+    logos = { dtts: dttsLogo, rmo: rmoLogo, pvs: pvsLogo };
+  } catch (error) {
+    console.warn('Could not load logos:', error);
+  }
+
+  // Page 1: Header, Summary, and Charts
+  // ====================================
+
+  // Add logos header
+  let yPosition = 15;
+  const logoHeight = 20;
+  const totalLogoWidth = 120; // Approximate total width for all logos
+  const startX = (pageWidth - totalLogoWidth) / 2;
+
+  if (logos.dtts) {
+    doc.addImage(logos.dtts, 'PNG', startX, yPosition, 30, logoHeight);
+  }
+  if (logos.rmo) {
+    doc.addImage(logos.rmo, 'PNG', startX + 40, yPosition, 40, logoHeight);
+  }
+  if (logos.pvs) {
+    doc.addImage(logos.pvs, 'PNG', startX + 90, yPosition, 30, logoHeight);
+  }
+
+  yPosition += logoHeight + 10;
+
+  // Title
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Regional Road Survey Report', pageWidth / 2, yPosition, { align: 'center' });
   
-  doc.text(`Total Maintenance Cost: ${formatCost(data.totalCost)}`, margin, yPosition);
+  yPosition += 10;
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'normal');
+  const countyText = data.selectedCounty === 'all' ? 'All Local Authorities' : data.selectedCounty;
+  doc.text(countyText, pageWidth / 2, yPosition, { align: 'center' });
+  
   yPosition += 8;
-  doc.text(`Total Road Network Length: ${data.totalLength.toFixed(0)} km`, margin, yPosition);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Generated: ${timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
+  doc.setTextColor(0);
   
-  // Capture and add charts
-  yPosition += 20;
+  // Summary Statistics Box
+  yPosition += 15;
+  doc.setFillColor(245, 245, 245);
+  doc.rect(margin, yPosition - 8, pageWidth - 2 * margin, 25, 'F');
   
-  // Try to capture the length chart
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Total Maintenance Cost:', margin + 5, yPosition);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(200, 0, 0);
+  doc.text(formatCost(data.totalCost), margin + 55, yPosition);
+  doc.setTextColor(0);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.text('Total Road Network Length:', pageWidth / 2 + 5, yPosition);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(0, 100, 0);
+  doc.text(`${data.totalLength.toFixed(0)} km`, pageWidth / 2 + 65, yPosition);
+  doc.setTextColor(0);
+  
+  yPosition += 30;
+
+  // Capture and add charts side by side
+  const chartWidth = (pageWidth - 3 * margin) / 2;
+  const chartHeight = 80;
+  
+  // Capture length chart
   const lengthChartElement = document.getElementById('length-chart-card');
   if (lengthChartElement) {
     try {
@@ -78,23 +159,13 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
         logging: false
       });
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = pageWidth - (2 * margin);
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Check if we need a new page
-      if (yPosition + imgHeight > pageHeight - margin) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      doc.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 10;
+      doc.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
     } catch (error) {
       console.error('Error capturing length chart:', error);
     }
   }
   
-  // Try to capture the costs chart
+  // Capture costs chart
   const costsChartElement = document.getElementById('costs-chart-card');
   if (costsChartElement) {
     try {
@@ -104,23 +175,14 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
         logging: false
       });
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = pageWidth - (2 * margin);
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      // Check if we need a new page
-      if (yPosition + imgHeight > pageHeight - margin) {
-        doc.addPage();
-        yPosition = 20;
-      }
-      
-      doc.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
-      yPosition += imgHeight + 10;
+      doc.addImage(imgData, 'PNG', margin + chartWidth + margin, yPosition, chartWidth, chartHeight);
     } catch (error) {
       console.error('Error capturing costs chart:', error);
     }
   }
-  
-  // Add category breakdown table
+
+  // Page 2: Data Tables
+  // ===================
   doc.addPage();
   yPosition = 20;
   
@@ -128,20 +190,9 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   doc.setFont('helvetica', 'bold');
   doc.text('Maintenance Category Breakdown', margin, yPosition);
   
-  yPosition += 15;
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  
-  // Table headers
-  doc.setFont('helvetica', 'bold');
-  doc.text('Category', margin, yPosition);
-  doc.text('Length (km)', pageWidth - 80, yPosition);
-  doc.text('Cost', pageWidth - 40, yPosition);
-  
-  yPosition += 8;
-  doc.setFont('helvetica', 'normal');
-  
-  // Table data
+  yPosition += 10;
+
+  // Category breakdown table
   const categories: MaintenanceCategory[] = [
     'Road Reconstruction',
     'Structural Overlay',
@@ -149,109 +200,138 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     'Restoration of Skid Resistance',
     'Routine Maintenance'
   ];
-  
-  categories.forEach(category => {
-    const categoryName = category.length > 30 ? category.substring(0, 27) + '...' : category;
-    doc.text(categoryName, margin, yPosition);
-    doc.text(data.categoryLengths[category].toFixed(1), pageWidth - 80, yPosition);
-    doc.text(formatCost(data.categoryCosts[category]), pageWidth - 40, yPosition);
-    yPosition += 8;
+
+  const categoryData = categories.map(category => {
+    const length = data.categoryLengths[category];
+    const cost = data.categoryCosts[category];
+    const lengthPercentage = data.totalLength > 0 ? ((length / data.totalLength) * 100).toFixed(1) : '0.0';
+    const costPercentage = data.totalCost > 0 ? ((cost / data.totalCost) * 100).toFixed(1) : '0.0';
+    
+    return [
+      category,
+      `${length.toFixed(1)} km`,
+      `${lengthPercentage}%`,
+      formatCost(cost),
+      `${costPercentage}%`
+    ];
   });
+
+  // Add totals row
+  categoryData.push([
+    'TOTAL',
+    `${data.totalLength.toFixed(1)} km`,
+    '100.0%',
+    formatCost(data.totalCost),
+    '100.0%'
+  ]);
+
+  autoTable(doc, {
+    head: [['Category', 'Length', 'Length %', 'Cost', 'Cost %']],
+    body: categoryData,
+    startY: yPosition,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [66, 139, 202],
+      textColor: 255,
+      fontSize: 11,
+      fontStyle: 'bold'
+    },
+    bodyStyles: {
+      fontSize: 10
+    },
+    footStyles: {
+      fillColor: [240, 240, 240],
+      textColor: 0,
+      fontStyle: 'bold'
+    },
+    didParseCell: function(data) {
+      if (data.row.index === categoryData.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [240, 240, 240];
+      }
+    }
+  });
+
+  // Maintenance Parameters Table
+  yPosition = (doc as any).lastAutoTable.finalY + 20;
   
-  // Add parameters section
-  doc.addPage();
-  yPosition = 20;
-  
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('Maintenance Parameters', margin, yPosition);
   
-  yPosition += 15;
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  
-  // Parameters grouped by category
-  const parameterGroups = [
-    {
-      title: 'Road Reconstruction',
-      params: [
-        { label: 'IRI ≥', value: data.parameters.roadReconstruction_iri },
-        { label: 'RUT ≥', value: data.parameters.roadReconstruction_rut, suffix: ' mm' },
-        { label: 'PSCI ≤', value: data.parameters.roadReconstruction_psci }
-      ]
-    },
-    {
-      title: 'Structural Overlay',
-      params: [
-        { label: 'IRI ≥', value: data.parameters.structuralOverlay_iri },
-        { label: 'RUT ≥', value: data.parameters.structuralOverlay_rut, suffix: ' mm' },
-        { label: 'PSCI ≤', value: data.parameters.structuralOverlay_psci }
-      ]
-    },
-    {
-      title: 'Surface Restoration',
-      params: [
-        { label: 'PSCI ≤ (A)', value: data.parameters.surfaceRestoration_psci_a },
-        { label: 'PSCI ≤ (B) & IRI ≥', value: data.parameters.surfaceRestoration_psci_b },
-        { label: 'IRI ≥', value: data.parameters.surfaceRestoration_iri },
-        { label: 'PSCI ≤ (C)', value: data.parameters.surfaceRestoration_psci_c }
-      ]
-    },
-    {
-      title: 'Restoration of Skid Resistance',
-      params: [
-        { label: 'PSCI ≤ (A)', value: data.parameters.skidResistance_psci_a },
-        { label: 'PSCI ≤ (B) & CSC ≤', value: data.parameters.skidResistance_psci_b },
-        { label: 'CSC ≤', value: data.parameters.skidResistance_csc },
-        { label: 'PSCI ≤ (C) & MPD ≤', value: data.parameters.skidResistance_psci_c },
-        { label: 'MPD ≤', value: data.parameters.skidResistance_mpd, suffix: ' mm' }
-      ]
-    }
-  ];
-  
-  parameterGroups.forEach(group => {
-    doc.setFont('helvetica', 'bold');
-    doc.text(group.title, margin, yPosition);
-    yPosition += 8;
-    
-    doc.setFont('helvetica', 'normal');
-    group.params.forEach(param => {
-      doc.text(`${param.label}: ${param.value}${param.suffix || ''}`, margin + 10, yPosition);
-      yPosition += 6;
-    });
-    
-    yPosition += 4;
-    
-    // Check if we need a new page
-    if (yPosition > pageHeight - 40) {
-      doc.addPage();
-      yPosition = 20;
-    }
-  });
-  
-  // Add costs section
   yPosition += 10;
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Cost Parameters (€/sqm)', margin, yPosition);
-  
-  yPosition += 15;
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  
-  const costLabels = {
-    rr: 'Road Reconstruction',
-    so: 'Structural Overlay',
-    sr: 'Surface Restoration',
-    rs: 'Restoration of Skid Resistance',
-    rm: 'Routine Maintenance'
-  };
-  
-  Object.entries(data.costs).forEach(([key, value]) => {
-    doc.text(`${costLabels[key as keyof typeof costLabels]}: €${value}/sqm`, margin, yPosition);
-    yPosition += 8;
+
+  const parameterData = [
+    ['Category', 'Parameter', 'Threshold', 'Unit'],
+    ['Road Reconstruction', 'IRI', `≥ ${data.parameters.roadReconstruction_iri}`, ''],
+    ['', 'RUT', `≥ ${data.parameters.roadReconstruction_rut}`, 'mm'],
+    ['', 'PSCI', `≤ ${data.parameters.roadReconstruction_psci}`, ''],
+    ['Structural Overlay', 'IRI', `≥ ${data.parameters.structuralOverlay_iri}`, ''],
+    ['', 'RUT', `≥ ${data.parameters.structuralOverlay_rut}`, 'mm'],
+    ['', 'PSCI', `≤ ${data.parameters.structuralOverlay_psci}`, ''],
+    ['Surface Restoration', 'PSCI (A)', `≤ ${data.parameters.surfaceRestoration_psci_a}`, ''],
+    ['', 'PSCI (B) & IRI', `≤ ${data.parameters.surfaceRestoration_psci_b} & IRI ≥ ${data.parameters.surfaceRestoration_iri}`, ''],
+    ['', 'PSCI (C)', `≤ ${data.parameters.surfaceRestoration_psci_c}`, ''],
+    ['Skid Resistance', 'PSCI (A)', `≤ ${data.parameters.skidResistance_psci_a}`, ''],
+    ['', 'PSCI (B) & CSC', `≤ ${data.parameters.skidResistance_psci_b} & CSC ≤ ${data.parameters.skidResistance_csc}`, ''],
+    ['', 'PSCI (C) & MPD', `≤ ${data.parameters.skidResistance_psci_c} & MPD ≤ ${data.parameters.skidResistance_mpd}`, 'mm']
+  ];
+
+  autoTable(doc, {
+    body: parameterData.slice(1),
+    head: [parameterData[0]],
+    startY: yPosition,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [66, 139, 202],
+      textColor: 255,
+      fontSize: 10,
+      fontStyle: 'bold'
+    },
+    bodyStyles: {
+      fontSize: 9
+    },
+    columnStyles: {
+      0: { cellWidth: 40 },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 70 },
+      3: { cellWidth: 20 }
+    }
   });
+
+  // Cost Parameters Table
+  yPosition = (doc as any).lastAutoTable.finalY + 15;
   
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Cost Parameters', margin, yPosition);
+  
+  yPosition += 10;
+
+  const costData = [
+    ['Road Reconstruction (RR)', `€${data.costs.rr}/sqm`],
+    ['Structural Overlay (SO)', `€${data.costs.so}/sqm`],
+    ['Surface Restoration (SR)', `€${data.costs.sr}/sqm`],
+    ['Restoration of Skid Resistance (RS)', `€${data.costs.rs}/sqm`],
+    ['Routine Maintenance (RM)', `€${data.costs.rm}/sqm`]
+  ];
+
+  autoTable(doc, {
+    head: [['Maintenance Category', 'Cost per Square Meter']],
+    body: costData,
+    startY: yPosition,
+    theme: 'grid',
+    headStyles: {
+      fillColor: [66, 139, 202],
+      textColor: 255,
+      fontSize: 10,
+      fontStyle: 'bold'
+    },
+    bodyStyles: {
+      fontSize: 10
+    }
+  });
+
   // Save the PDF
   doc.save(`RMO_Report_${data.selectedCounty}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
