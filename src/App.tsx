@@ -1,5 +1,5 @@
 // src/App.tsx
-// UPDATED: Implemented the "Generate Report" dropdown and its handler functions.
+// FIXED: Import ReportData and remove unused MaintenanceCategory import
 
 import React, { useEffect } from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result, Dropdown, message } from 'antd';
@@ -20,8 +20,7 @@ import { lightTheme, darkTheme } from './config/themeConfig';
 import { useMobileDetection } from './hooks';
 import Dashboard from './components/Dashboard';
 import MobileDashboard from './components/MobileDashboard';
-import { generatePdfReport, generateCsvReport } from './utils/reportGenerator';
-import type { MaintenanceCategory } from './types';
+import { generatePdfReport, generateCsvReport, type ReportData } from './utils/reportGenerator';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
