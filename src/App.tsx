@@ -55,7 +55,7 @@ const LoginScreen: React.FC = () => {
           />
           <img 
             src="/img/PMS-Logo.png" 
-            alt="PVS" 
+            alt="PMS" 
             style={{ height: 60 }}
           />
         </Space>
@@ -195,18 +195,18 @@ const MainDashboard: React.FC = () => {
           {!isMobileView && (
             <>
               <img 
-                src="/img/dtts-logo.png" 
+                src="/img/DoT_Logo.png"
                 alt="DTTS" 
                 style={{ height: 32, marginRight: 8 }}
               />
               <img 
-                src="/img/rmo-logo.png" 
+                src="/img/RMO-Logo-rebrand.jpg" 
                 alt="RMO" 
                 style={{ height: 32, marginRight: 8 }}
               />
               <img 
-                src="/img/pvs-logo.png" 
-                alt="PVS" 
+                src="/img/PMS-Logo.png" 
+                alt="PMS" 
                 style={{ height: 32, marginRight: 16 }}
               />
             </>

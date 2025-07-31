@@ -7,7 +7,7 @@ import type { MaintenanceParameters, CostInputs, MaintenanceCategory } from '../
 // Logo paths - these should be placed in the public/img directory
 const LOGO_PATHS = {
   dtts: '/img/DoT_Logo.png',
-  rmo: '/img/RMO-Logo-rebrand.png',
+  rmo: '/img/RMO-Logo-rebrand.jpg',
   pvs: '/img/PMS-Logo.png'
 };
 
