@@ -46,17 +46,17 @@ const LoginScreen: React.FC = () => {
           <img 
             src="/img/DoT_Logo.png" 
             alt="Department of Transport, Tourism and Sport" 
-            style={{ height: 60 }}
+            style={{ height: 40 }}
           />
           <img 
             src="/img/RMO-Logo-rebrand.jpg" 
             alt="Regional & Local Roads Management Office" 
-            style={{ height: 60 }}
+            style={{ height: 40 }}
           />
           <img 
             src="/img/PMS-Logo.png" 
             alt="PMS" 
-            style={{ height: 60 }}
+            style={{ height: 40 }}
           />
         </Space>
         
