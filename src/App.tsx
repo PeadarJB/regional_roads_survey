@@ -1,12 +1,18 @@
 // src/App.tsx
+// UPDATED: Implemented the "Generate Report" dropdown and its handler functions.
+
 import React, { useEffect } from 'react';
-import { Button, Layout, Spin, Switch, Typography, Space, Result } from 'antd';
+import { Button, Layout, Spin, Switch, Typography, Space, Result, Dropdown, message } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   LogoutOutlined,
   LoginOutlined,
   SunOutlined,
   MoonOutlined,
   MenuOutlined,
+  DownloadOutlined,
+  FilePdfOutlined,
+  FileExcelOutlined,
 } from '@ant-design/icons';
 import { ThemeProvider, useTheme } from 'antd-style';
 import { usePavementStore } from './store/usePavementStore';
@@ -14,6 +20,8 @@ import { lightTheme, darkTheme } from './config/themeConfig';
 import { useMobileDetection } from './hooks';
 import Dashboard from './components/Dashboard';
 import MobileDashboard from './components/MobileDashboard';
+import { generatePdfReport, generateCsvReport } from './utils/reportGenerator';
+import type { MaintenanceCategory } from './types';
 
 const { Header } = Layout;
 const { Title, Text } = Typography;
@@ -57,23 +65,91 @@ const LoginScreen: React.FC = () => {
  * The MainDashboard component is the core application UI for authenticated users.
  */
 const MainDashboard: React.FC = () => {
-  const logout = usePavementStore((state) => state.logout);
-  const user = usePavementStore((state) => state.user);
-  const loading = usePavementStore((state) => state.loading);
-  const fetchRoadNetworkData = usePavementStore(
-    (state) => state.fetchRoadNetworkData,
-  );
-  const themeMode = usePavementStore((state) => state.themeMode);
-  const setThemeMode = usePavementStore((state) => state.setThemeMode);
-  const toggleParameterDrawer = usePavementStore(
-    (state) => state.toggleParameterDrawer,
-  );
+  // Select all necessary state and actions from the store
+  const {
+    logout,
+    user,
+    loading,
+    fetchRoadNetworkData,
+    themeMode,
+    setThemeMode,
+    toggleParameterDrawer,
+    isGeneratingReport,
+    setIsGeneratingReport,
+    totalCost,
+    totalLength,
+    selectedCounty,
+    parameters,
+    costs,
+    categoryLengths,
+    categoryCosts,
+  } = usePavementStore();
+
   const isMobileView = useMobileDetection();
   const theme = useTheme();
 
   useEffect(() => {
     fetchRoadNetworkData();
   }, [fetchRoadNetworkData]);
+
+  const handleGeneratePdf = async () => {
+    setIsGeneratingReport(true);
+    message.loading({ content: 'Generating PDF Report...', key: 'report' });
+    try {
+      const reportData: ReportData = {
+        totalCost,
+        totalLength,
+        selectedCounty,
+        parameters,
+        costs,
+        categoryLengths,
+        categoryCosts,
+      };
+      await generatePdfReport(reportData);
+      message.success({ content: 'PDF Report downloaded!', key: 'report', duration: 2 });
+    } catch (error) {
+      console.error("Failed to generate PDF report:", error);
+      message.error({ content: 'Failed to generate PDF.', key: 'report', duration: 2 });
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleGenerateCsv = () => {
+    setIsGeneratingReport(true);
+    try {
+      const reportData: ReportData = {
+        totalCost,
+        totalLength,
+        selectedCounty,
+        parameters,
+        costs,
+        categoryLengths,
+        categoryCosts,
+      };
+      generateCsvReport(reportData);
+    } catch (error) {
+      console.error("Failed to generate CSV report:", error);
+      message.error('Failed to generate CSV.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const menuItems: MenuProps['items'] = [
+    {
+      key: 'pdf',
+      label: 'Download PDF Report',
+      icon: <FilePdfOutlined />,
+      onClick: handleGeneratePdf,
+    },
+    {
+      key: 'csv',
+      label: 'Download CSV Data',
+      icon: <FileExcelOutlined />,
+      onClick: handleGenerateCsv,
+    },
+  ];
 
   const headerTextColor = themeMode === 'light' ? 'black' : 'white';
 
@@ -107,6 +183,11 @@ const MainDashboard: React.FC = () => {
               Welcome, {user?.username}
             </Text>
           )}
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight">
+            <Button icon={<DownloadOutlined />} loading={isGeneratingReport}>
+              Generate Report
+            </Button>
+          </Dropdown>
           <Switch
             checkedChildren={<MoonOutlined />}
             unCheckedChildren={<SunOutlined />}
@@ -118,10 +199,6 @@ const MainDashboard: React.FC = () => {
             ghost
             icon={<LogoutOutlined />}
             onClick={logout}
-            style={{
-              borderColor: '#1890ff',
-              color: '#1890ff',
-            }}
           >
             {!isMobileView && 'Logout'}
           </Button>
@@ -131,6 +208,7 @@ const MainDashboard: React.FC = () => {
         {loading ? (
           <div
             style={{
+              position: 'relative',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

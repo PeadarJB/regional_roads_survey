@@ -3,14 +3,14 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import type { MaintenanceParameters, CostInputs, MaintenanceCategory } from '../types';
 
-interface ReportData {
+export interface ReportData {
   totalCost: number;
   totalLength: number;
   selectedCounty: string;
   parameters: MaintenanceParameters;
   costs: CostInputs;
-  categoryData: Record<MaintenanceCategory, { length: number; cost: number }>;
-  timestamp: string;
+  categoryLengths: Record<MaintenanceCategory, number>;
+  categoryCosts: Record<MaintenanceCategory, number>;
 }
 
 /**
@@ -22,6 +22,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 15;
   let yPosition = 20;
+  const timestamp = new Date().toLocaleString();
 
   // Title
   doc.setFontSize(20);
@@ -36,7 +37,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   
   yPosition += 10;
   doc.setFontSize(12);
-  doc.text(`Generated: ${data.timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
+  doc.text(`Generated: ${timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
   
   // Summary Section
   yPosition += 20;
@@ -152,8 +153,8 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   categories.forEach(category => {
     const categoryName = category.length > 30 ? category.substring(0, 27) + '...' : category;
     doc.text(categoryName, margin, yPosition);
-    doc.text(data.categoryData[category].length.toFixed(1), pageWidth - 80, yPosition);
-    doc.text(formatCost(data.categoryData[category].cost), pageWidth - 40, yPosition);
+    doc.text(data.categoryLengths[category].toFixed(1), pageWidth - 80, yPosition);
+    doc.text(formatCost(data.categoryCosts[category]), pageWidth - 40, yPosition);
     yPosition += 8;
   });
   
@@ -259,6 +260,8 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
  * Generates a CSV file with the maintenance category data
  */
 export const generateCsvReport = (data: ReportData): void => {
+  const timestamp = new Date().toLocaleString();
+  
   // Create CSV header
   let csvContent = 'Category,Length (km),Cost (€),Percentage of Total Length (%),Percentage of Total Cost (%)\n';
   
@@ -272,8 +275,8 @@ export const generateCsvReport = (data: ReportData): void => {
   ];
   
   categories.forEach(category => {
-    const length = data.categoryData[category].length;
-    const cost = data.categoryData[category].cost;
+    const length = data.categoryLengths[category];
+    const cost = data.categoryCosts[category];
     const lengthPercentage = data.totalLength > 0 ? ((length / data.totalLength) * 100).toFixed(2) : '0.00';
     const costPercentage = data.totalCost > 0 ? ((cost / data.totalCost) * 100).toFixed(2) : '0.00';
     
@@ -284,7 +287,7 @@ export const generateCsvReport = (data: ReportData): void => {
   csvContent += `\n"TOTAL",${data.totalLength.toFixed(2)},${data.totalCost.toFixed(2)},100.00,100.00\n`;
   
   // Add metadata
-  csvContent += `\n"Generated:",${data.timestamp}\n`;
+  csvContent += `\n"Generated:",${timestamp}\n`;
   csvContent += `"Local Authority:",${data.selectedCounty === 'all' ? 'All Counties' : data.selectedCounty}\n`;
   
   // Create and trigger download
