@@ -164,14 +164,14 @@ const MainCharts: React.FC = () => {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', gap: isMobileView ? 16 : 0, paddingTop: isMobileView ? 16 : 0 }}>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <Card title="Maintenance Category Length" style={{ height: '100%' }} styles={{ body: { height: `calc(100% - ${isMobileView ? '38px' : '57px'})` } }} size={isMobileView ? 'small' : 'default'}>
+        <Card id="length-chart-card" title="Maintenance Category Length" style={{ height: '100%' }} styles={{ body: { height: `calc(100% - ${isMobileView ? '38px' : '57px'})` } }} size={isMobileView ? 'small' : 'default'}>
           <ChartErrorBoundary>
             <BarChart datasetIdKey="lengthChart" data={lengthData} options={lengthOptions} />
           </ChartErrorBoundary>
         </Card>
       </div>
       <div style={{ flex: 1, minHeight: 0, marginTop: isMobileView ? 0 : '16px' }}>
-        <Card title="Maintenance Category Costs" style={{ height: '100%' }} styles={{ body: { height: `calc(100% - ${isMobileView ? '38px' : '57px'})` } }} size={isMobileView ? 'small' : 'default'}>
+        <Card id="costs-chart-card" title="Maintenance Category Costs" style={{ height: '100%' }} styles={{ body: { height: `calc(100% - ${isMobileView ? '38px' : '57px'})` } }} size={isMobileView ? 'small' : 'default'}>
           <ChartErrorBoundary>
             <BarChart datasetIdKey="costsChart" data={costsData} options={costsOptions} />
           </ChartErrorBoundary>
