@@ -1,0 +1,79 @@
+Project Root/
+├── 📜 amplify.yml         # AWS Amplify deployment config
+├── 📜 eslint.config.js     # Code linting rules
+├── 📜 .gitignore          # Files to ignore in Git
+├── 📄 index.html          # Main app entry point
+├── 📦 package.json         # Project dependencies & scripts
+├── 📦 package-lock.json    # Exact dependency versions
+├── 📖 README.md            # Project documentation
+├── 📜 tsconfig.json        # TypeScript compiler settings
+└── 📜 vite.config.ts        # Vite build tool config
+
+---
+
+📁 public/                   # Static assets served directly
+├── 📁 data/
+│   └── 📄 staticData.json  # Fallback road network data
+├── 📁 img/
+│   └── 🖼️ (logos)           # Department, RMO logos etc.
+└── 🖼️ vite.svg            # Browser tab icon
+
+---
+
+📁 src/                      # Main application source code
+├── 🎨 App.css & index.css # Global styles
+├── ⚛️ App.tsx             # Root React component (layout, theme, auth)
+├── 🚀 main.tsx             # React DOM render entry point
+│
+├── 📁 components/           # Reusable UI components
+│   ├── 📁 charts/           # Data visualization charts
+│   │   ├── 📊 MainCharts.tsx
+│   │   ├── 📊 MaintenanceCostChart.tsx
+│   │   ├── 📊 MaintenanceLengthChart.tsx
+│   │   ├── 📊 BarChart.tsx (Generic)
+│   │   └── 🛡️ ChartErrorBoundary.tsx
+│   │
+│   ├── 📁 common/           # Shared UI elements
+│   │   └── 🔢 SummaryCards.tsx
+│   │
+│   ├── 📁 controls/         # User input components
+│   │   ├── 🎛️ ControlsSidebar.tsx (Desktop)
+│   │   ├── 🎛️ ParametersSection.tsx
+│   │   ├── 🎛️ CostsSection.tsx
+│   │   └── 📱 ParametersDrawer.tsx (Mobile)
+│   │
+│   ├── 📁 map/              # ArcGIS map components
+│   │   ├── 🗺️ MapPanel.tsx
+│   │   ├── 🗺️ MapComponent.tsx
+│   │   ├── ✨ EnhancedMapController.tsx (New Logic)
+│   │   └── 낡 MapController.tsx (Old Logic)
+│   │
+- │   └── ⚠️ EnhancedMapSlice.tsx # MISPLACED: Contains state logic
+│
+├── 📁 config/               # App-wide configuration
+│   ├── 🔑 arcgis.ts         # ArcGIS API key & Web Map ID
+│   ├── ⚙️ constants.ts      # Default parameter & cost values
+│   └── 🎨 themeConfig.ts     # Light/dark theme colors
+│
+├── 📁 hooks/                # Custom React hooks
+│   ├── 🎣 useDebouncedCallback.ts
+│   └── 🎣 useMobileDetection.ts
+│
+├── 📁 store/                # Zustand state management
+│   ├── 🏪 usePavementStore.ts # Central combined store
+│   └── 📁 slices/           # Individual state slices
+│       ├── 🧠 calculationsSlice.ts
+│       ├── 🧠 filtersSlice.ts
+│       ├── 🧠 mapSlice.ts
+│       ├── 🧠 parametersSlice.ts
++       └── ✨ enhancedMapSlice.ts  # SUGGESTED LOCATION
+│
+├── 📁 types/                # TypeScript type definitions
+│   ├── 📝 index.ts         # Core application types
+│   └── 📝 featureLayer.ts   # ArcGIS data structure types
+│
+└── 📁 utils/                # Utility functions & business logic
+    ├── ➗ calculations.ts         # Old logic (static data)
+    ├── 🧮 featureLayerCalculations.ts # New logic (live data)
+    ├── 쿼 featureLayerQueries.ts     # Dynamic SQL query builder
+    └── 📄 reportGenerator.ts      # PDF & CSV export logic
