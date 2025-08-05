@@ -6,11 +6,11 @@ import { usePavementStore } from '../../store/usePavementStore';
 import { MaintenanceQueryBuilder } from '../../utils/featureLayerQueries';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Graphic from '@arcgis/core/Graphic';
-import SimpleFillSymbol from '@arcgis/core/symbols/SimpleFillSymbol';
 import SimpleLineSymbol from '@arcgis/core/symbols/SimpleLineSymbol';
 import Query from '@arcgis/core/rest/support/Query';
 import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import type { MaintenanceCategory } from '../../types';
+import Extent from "@arcgis/core/geometry/Extent";
 
 // Define colors for each maintenance category
 const CATEGORY_COLORS: Record<MaintenanceCategory, string> = {
@@ -41,12 +41,14 @@ const EnhancedMapController: React.FC = () => {
       title: 'Maintenance Category Highlights'
     });
 
-    mapView.map.add(highlightLayer);
+    if (mapView.map) {
+        mapView.map.add(highlightLayer);
+    }
     highlightLayerRef.current = highlightLayer;
 
     // Cleanup on unmount
     return () => {
-      if (mapView.map.findLayerById('maintenance-highlight-layer')) {
+      if (mapView.map && mapView.map.findLayerById('maintenance-highlight-layer')) {
         mapView.map.remove(highlightLayer);
       }
     };
@@ -54,7 +56,7 @@ const EnhancedMapController: React.FC = () => {
 
   // Apply feature layer filtering and highlighting
   useEffect(() => {
-    if (!roadNetworkLayer || !highlightLayerRef.current) return;
+    if (!roadNetworkLayer || !highlightLayerRef.current || !mapView) return;
 
     const applyFiltersAndHighlight = async () => {
       try {
@@ -88,12 +90,9 @@ const EnhancedMapController: React.FC = () => {
           console.log(`Found ${featureSet.features.length} features for ${selectedCategory}`);
 
           // Create highlight graphics
-          const highlightSymbol = new SimpleFillSymbol({
-            color: CATEGORY_COLORS[selectedCategory],
-            outline: new SimpleLineSymbol({
+          const highlightSymbol = new SimpleLineSymbol({
               color: CATEGORY_COLORS[selectedCategory],
               width: 3
-            })
           });
 
           // Add highlights for each feature
@@ -111,15 +110,26 @@ const EnhancedMapController: React.FC = () => {
 
           // Zoom to highlighted features if any found
           if (featureSet.features.length > 0) {
-            const geometries = featureSet.features.map(f => f.geometry);
-            const extent = geometries.reduce((acc, geom) => {
-              return acc ? acc.union(geom.extent) : geom.extent;
-            }, null);
-
-            if (extent) {
-              mapView.goTo(extent.expand(1.2), {
-                duration: 1000
-              });
+            // Collect all valid extents
+            const extents: Extent[] = [];
+            featureSet.features.forEach((feature) => {
+              if (feature.geometry && feature.geometry.extent) {
+                extents.push(feature.geometry.extent);
+              }
+            });
+          
+            if (extents.length > 0) {
+              // Start with first extent
+              let combined = extents[0].clone();
+              
+              // Union with remaining extents
+              for (let i = 1; i < extents.length; i++) {
+                combined = combined.union(extents[i]);
+              }
+          
+              // Expand and zoom
+              const expanded = combined.expand(1.2);
+              mapView.goTo(expanded, { duration: 1000 });
             }
           }
         }
@@ -143,12 +153,13 @@ const EnhancedMapController: React.FC = () => {
     const handle = mapView.on('click', async (event) => {
       try {
         const response = await mapView.hitTest(event);
-        const results = response.results.filter(
-          (result: any) => result.graphic.layer === roadNetworkLayer
-        );
+        const graphicHits = response.results.filter(
+            (r): r is __esri.GraphicHit => 
+              "graphic" in r && r.graphic.layer === roadNetworkLayer
+          );
 
-        if (results.length > 0) {
-          const graphic = results[0].graphic;
+        if (graphicHits.length > 0) {
+          const graphic = graphicHits[0].graphic;
           const attributes = graphic.attributes;
 
           // Determine the maintenance category for this segment
@@ -168,23 +179,25 @@ const EnhancedMapController: React.FC = () => {
           }
 
           // Create a custom popup content
-          mapView.popup.open({
-            title: `Road Segment: ${attributes.Route || 'Unknown'}`,
-            location: event.mapPoint,
-            content: `
-              <div style="padding: 10px;">
-                <h4>Maintenance Category: <span style="color: ${CATEGORY_COLORS[segmentCategory]}">${segmentCategory}</span></h4>
-                <table style="width: 100%; margin-top: 10px;">
-                  <tr><td><strong>County:</strong></td><td>${attributes.LA}</td></tr>
-                  <tr><td><strong>IRI (2018):</strong></td><td>${attributes.AIRI_2018?.toFixed(2) || 'N/A'}</td></tr>
-                  <tr><td><strong>Rut Depth (2018):</strong></td><td>${attributes.LRUT_2018?.toFixed(2) || 'N/A'} mm</td></tr>
-                  <tr><td><strong>PSCI (2018):</strong></td><td>${attributes.PSCI_Class_2018 || 'N/A'}</td></tr>
-                  <tr><td><strong>CSC (2018):</strong></td><td>${attributes.CSC_Class_2018?.toFixed(2) || 'N/A'}</td></tr>
-                  <tr><td><strong>MPD (2018):</strong></td><td>${attributes.MPD_2018?.toFixed(2) || 'N/A'} mm</td></tr>
-                </table>
-              </div>
-            `
-          });
+          if(mapView.popup) {
+            mapView.popup.open({
+                title: `Road Segment: ${attributes.Route || 'Unknown'}`,
+                location: event.mapPoint,
+                content: `
+                  <div style="padding: 10px;">
+                    <h4>Maintenance Category: <span style="color: ${CATEGORY_COLORS[segmentCategory]}">${segmentCategory}</span></h4>
+                    <table style="width: 100%; margin-top: 10px;">
+                      <tr><td><strong>County:</strong></td><td>${attributes.LA}</td></tr>
+                      <tr><td><strong>IRI (2018):</strong></td><td>${attributes.AIRI_2018?.toFixed(2) || 'N/A'}</td></tr>
+                      <tr><td><strong>Rut Depth (2018):</strong></td><td>${attributes.LRUT_2018?.toFixed(2) || 'N/A'} mm</td></tr>
+                      <tr><td><strong>PSCI (2018):</strong></td><td>${attributes.PSCI_Class_2018 || 'N/A'}</td></tr>
+                      <tr><td><strong>CSC (2018):</strong></td><td>${attributes.CSC_Class_2018?.toFixed(2) || 'N/A'}</td></tr>
+                      <tr><td><strong>MPD (2018):</strong></td><td>${attributes.MPD_2018?.toFixed(2) || 'N/A'} mm</td></tr>
+                    </table>
+                  </div>
+                `
+            });
+          }
         }
       } catch (error) {
         console.error('Error handling map click:', error);
