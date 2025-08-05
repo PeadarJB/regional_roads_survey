@@ -1,7 +1,6 @@
 // src/utils/reportGenerator.ts
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
 import type { MaintenanceParameters, CostInputs, MaintenanceCategory } from '../types';
 
 // Logo paths - these should be placed in the public/img directory
@@ -19,6 +18,13 @@ export interface ReportData {
   costs: CostInputs;
   categoryLengths: Record<MaintenanceCategory, number>;
   categoryCosts: Record<MaintenanceCategory, number>;
+}
+
+// Extended interface for jsPDF with autoTable properties
+interface ExtendedJsPDF extends jsPDF {
+  lastAutoTable?: {
+    finalY: number;
+  };
 }
 
 /**
@@ -49,7 +55,7 @@ const getImageBase64 = async (url: string): Promise<string> => {
  * Generates a professional PDF report of the current dashboard state
  */
 export const generatePdfReport = async (data: ReportData): Promise<void> => {
-  const doc = new jsPDF('p', 'mm', 'a4');
+  const doc = new jsPDF('p', 'mm', 'a4') as ExtendedJsPDF;
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
   const timestamp = new Date().toLocaleString('en-GB', {
@@ -114,85 +120,47 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   yPosition += 10;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
-  const countyText = data.selectedCounty === 'all' ? 'All Local Authorities' : data.selectedCounty;
+  const countyText = data.selectedCounty === 'all' ? 
+    'All Local Authorities' : 
+    data.selectedCounty;
   doc.text(countyText, pageWidth / 2, yPosition, { align: 'center' });
   
-  yPosition += 8;
-  doc.setFontSize(10);
-  doc.setTextColor(100);
-  doc.text(`Generated: ${timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
-  doc.setTextColor(0);
-  
-  // Summary Statistics Box
   yPosition += 15;
-  doc.setFillColor(245, 245, 245);
-  doc.rect(margin, yPosition - 8, pageWidth - 2 * margin, 25, 'F');
+  doc.setFontSize(10);
+  doc.text(`Generated: ${timestamp}`, pageWidth / 2, yPosition, { align: 'center' });
   
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Total Maintenance Cost:', margin + 5, yPosition);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(200, 0, 0);
-  doc.text(formatCost(data.totalCost), margin + 55, yPosition);
-  doc.setTextColor(0);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.text('Total Road Network Length:', pageWidth / 2 + 5, yPosition);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(0, 100, 0);
-  doc.text(`${data.totalLength.toFixed(0)} km`, pageWidth / 2 + 65, yPosition);
-  doc.setTextColor(0);
-  
-  yPosition += 30;
+  yPosition += 20;
 
-  // Capture and add charts side by side
-  const chartWidth = (pageWidth - 3 * margin) / 2;
-  const chartHeight = 80;
-  
-  // Capture length chart
-  const lengthChartElement = document.getElementById('length-chart-card');
-  if (lengthChartElement) {
-    try {
-      const canvas = await html2canvas(lengthChartElement, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-      const imgData = canvas.toDataURL('image/png');
-      doc.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
-    } catch (error) {
-      console.error('Error capturing length chart:', error);
-    }
-  }
-  
-  // Capture costs chart
-  const costsChartElement = document.getElementById('costs-chart-card');
-  if (costsChartElement) {
-    try {
-      const canvas = await html2canvas(costsChartElement, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-      const imgData = canvas.toDataURL('image/png');
-      doc.addImage(imgData, 'PNG', margin + chartWidth + margin, yPosition, chartWidth, chartHeight);
-    } catch (error) {
-      console.error('Error capturing costs chart:', error);
-    }
-  }
-
-  // Page 2: Data Tables
-  // ===================
-  doc.addPage();
-  yPosition = 20;
-  
+  // Executive Summary
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Maintenance Category Breakdown', margin, yPosition);
+  doc.text('Executive Summary', margin, yPosition);
+  
+  yPosition += 10;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  
+  const summaryText = [
+    `Total Regional Road Length: ${data.totalLength.toFixed(1)} km`,
+    `Total Estimated Cost: ${formatCost(data.totalCost)}`,
+    `Assessment Date: ${new Date().getFullYear()}`,
+    `Region: ${countyText}`
+  ];
+  
+  summaryText.forEach(text => {
+    doc.text(text, margin, yPosition);
+    yPosition += 8;
+  });
+
+  yPosition += 10;
+
+  // Maintenance Category Summary Table
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Maintenance Category Analysis', margin, yPosition);
   
   yPosition += 10;
 
-  // Category breakdown table
   const categories: MaintenanceCategory[] = [
     'Road Reconstruction',
     'Structural Overlay',
@@ -204,8 +172,10 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   const categoryData = categories.map(category => {
     const length = data.categoryLengths[category];
     const cost = data.categoryCosts[category];
-    const lengthPercentage = data.totalLength > 0 ? ((length / data.totalLength) * 100).toFixed(1) : '0.0';
-    const costPercentage = data.totalCost > 0 ? ((cost / data.totalCost) * 100).toFixed(1) : '0.0';
+    const lengthPercentage = data.totalLength > 0 ? 
+      ((length / data.totalLength) * 100).toFixed(1) : '0.0';
+    const costPercentage = data.totalCost > 0 ? 
+      ((cost / data.totalCost) * 100).toFixed(1) : '0.0';
     
     return [
       category,
@@ -232,7 +202,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: 255,
+      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
       fontSize: 11,
       fontStyle: 'bold'
     },
@@ -241,7 +211,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     },
     footStyles: {
       fillColor: [240, 240, 240],
-      textColor: 0,
+      textColor: [0, 0, 0], // Fixed: RGB array instead of single number
       fontStyle: 'bold'
     },
     didParseCell: function(data) {
@@ -253,7 +223,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   });
 
   // Maintenance Parameters Table
-  yPosition = (doc as any).lastAutoTable.finalY + 20;
+  yPosition = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 20 : yPosition + 100;
   
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -284,23 +254,20 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: 255,
+      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
       fontSize: 10,
       fontStyle: 'bold'
     },
     bodyStyles: {
       fontSize: 9
     },
-    columnStyles: {
-      0: { cellWidth: 40 },
-      1: { cellWidth: 50 },
-      2: { cellWidth: 70 },
-      3: { cellWidth: 20 }
-    }
+    // Fixed: Removed cellWidth properties that don't exist in AutoTableStyles
+    // You can control column widths through tableWidth and letting autoTable calculate proportions
+    tableWidth: 'auto'
   });
 
   // Cost Parameters Table
-  yPosition = (doc as any).lastAutoTable.finalY + 15;
+  yPosition = doc.lastAutoTable?.finalY ? doc.lastAutoTable.finalY + 15 : yPosition + 80;
   
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -323,7 +290,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: 255,
+      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
       fontSize: 10,
       fontStyle: 'bold'
     },
