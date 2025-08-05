@@ -46,7 +46,12 @@ const LocalAuthorityFilter: React.FC = () => {
   };
 
   // Custom tag render for selected items
-  const tagRender = (props: any) => {
+  const tagRender = (props: {
+      label: React.ReactNode;
+      value: string;
+      closable: boolean;
+      onClose: (e: React.MouseEvent<HTMLElement>) => void;
+    }) => {
     const { label, closable, onClose } = props;
     const onPreventMouseDown = (event: React.MouseEvent<HTMLSpanElement>) => {
       event.preventDefault();
