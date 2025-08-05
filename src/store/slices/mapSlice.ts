@@ -1,5 +1,6 @@
 // src/store/slices/mapSlice.ts
 // This slice manages all map-related state and interactions with ArcGIS
+// FIXED: Corrected TypeScript errors by improving type inference for the roadNetworkLayer.
 
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
@@ -7,12 +8,13 @@ import type { MaintenanceCategory } from '../../types';
 import MapView from '@arcgis/core/views/MapView';
 import WebMap from '@arcgis/core/WebMap';
 import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
+import type Field from '@arcgis/core/layers/support/Field';
 import { API_KEY, WEB_MAP_ID } from '../../config/arcgis';
 
 export interface MapSlice {
   // Map instances
   mapView: MapView | null;
-  roadLayer: FeatureLayer | null;
+  roadNetworkLayer: FeatureLayer | null; // The road network layer with all survey data
   
   // Map state
   selectedCategory: MaintenanceCategory | null;
@@ -25,7 +27,7 @@ export interface MapSlice {
 
 export const createMapSlice: StateCreator<StoreState, [], [], MapSlice> = (set, get) => ({
   mapView: null,
-  roadLayer: null,
+  roadNetworkLayer: null,
   selectedCategory: null,
   
   initializeMap: async (container: HTMLDivElement) => {
@@ -58,23 +60,50 @@ export const createMapSlice: StateCreator<StoreState, [], [], MapSlice> = (set, 
       await webMap.load();
       await view.when();
       
-      // Find the road network layer in the web map
-      // You may need to adjust this based on the actual layer name in your web map
-      const roadLayer = webMap.layers.find(layer => 
-        typeof layer.title === 'string' &&
-        (layer.title.toLowerCase().includes('road') || 
-         layer.title.toLowerCase().includes('network'))
-      ) as FeatureLayer;
-      
-      if (!roadLayer) {
-        console.error('Road network layer not found in web map');
-        return;
+      // Find the road network layer in the web map using a more direct `find` method
+      const roadNetworkLayer = webMap.layers.find(layer => {
+        const title = layer.title?.toLowerCase() || '';
+        return layer.type === 'feature' && (title.includes('road network') || title.includes('road'));
+      }) as FeatureLayer | null; // Cast the result to the expected type
+
+      // Verify the layer has the expected survey data fields
+      if (roadNetworkLayer) {
+        await roadNetworkLayer.load();
+        
+        console.log('Found Road Network Layer:', roadNetworkLayer.title);
+
+        const requiredFields = [
+          'OBJECTID', 
+          'LA', 
+          'AIRI_2018', 
+          'LRUT_2018', 
+          'PSCI_Class_2018', 
+          'CSC_Class_2018', 
+          'MPD_2018'
+        ];
+        
+        // Explicitly type the 'f' parameter in the map function
+        const availableFields = roadNetworkLayer.fields.map((f: Field) => f.name);
+        
+        console.log('Road Network Layer - Available fields:', availableFields);
+        
+        const missingFields = requiredFields.filter(field => !availableFields.includes(field));
+        if (missingFields.length > 0) {
+          console.warn('Road Network Layer - Missing expected fields:', missingFields);
+        } else {
+          console.log('Road Network Layer - All required fields present');
+        }
+        
+        // Ensure all fields are requested
+        roadNetworkLayer.outFields = ["*"];
+      } else {
+        console.error('Road Network Layer not found in web map. Please ensure the web map contains a feature layer with "road network" in its title.');
       }
       
       // Store references in state
       set({
         mapView: view,
-        roadLayer: roadLayer
+        roadNetworkLayer: roadNetworkLayer
       });
       
     } catch (error) {
@@ -93,7 +122,7 @@ export const createMapSlice: StateCreator<StoreState, [], [], MapSlice> = (set, 
     }
     set({
       mapView: null,
-      roadLayer: null,
+      roadNetworkLayer: null,
       selectedCategory: null
     });
   }
