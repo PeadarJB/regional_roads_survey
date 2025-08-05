@@ -2,7 +2,7 @@
 // Enhanced map slice with spatial query capabilities
 
 import type { StateCreator } from 'zustand';
-import type { StoreState } from '../store/slices/usePavementStore';
+import type { StoreState } from '../../store/usePavementStore';
 import type { MaintenanceCategory } from '../../types';
 import MapView from '@arcgis/core/views/MapView';
 import WebMap from '@arcgis/core/WebMap';
