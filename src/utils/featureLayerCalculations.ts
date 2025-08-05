@@ -1,11 +1,13 @@
 // src/utils/featureLayerCalculations.ts
-// Utility for performing calculations directly on the Feature Layer
+// FIXED: Using fixed 100m segment length instead of Shape_Length field
 
 import type FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import Query from '@arcgis/core/rest/support/Query';
 import type { MaintenanceCategory, MaintenanceParameters, CostInputs } from '../types';
 import { MaintenanceQueryBuilder } from './featureLayerQueries';
 
+// Fixed segment length in meters (given that each segment is 100m)
+const SEGMENT_LENGTH_METERS = 100;
 const STANDARD_ROAD_WIDTH = 7.5; // meters
 
 export interface FeatureLayerCalculationResult {
@@ -18,6 +20,7 @@ export interface FeatureLayerCalculationResult {
 
 /**
  * Performs maintenance calculations directly on the Feature Layer
+ * Now using fixed 100m segment length for all calculations
  */
 export class FeatureLayerCalculator {
   private featureLayer: FeatureLayer;
@@ -32,7 +35,7 @@ export class FeatureLayerCalculator {
   async calculateMaintenanceData(
     parameters: MaintenanceParameters,
     costs: CostInputs,
-    selectedCounty: string | 'all'
+    selectedCounty: string | 'all' | string[]
   ): Promise<FeatureLayerCalculationResult> {
     const result: FeatureLayerCalculationResult = {
       categoryLengths: {
@@ -60,16 +63,16 @@ export class FeatureLayerCalculator {
       totalCost: 0
     };
 
-    try {
-      // Calculate for each category
-      const categories: MaintenanceCategory[] = [
-        'Road Reconstruction',
-        'Structural Overlay',
-        'Surface Restoration',
-        'Restoration of Skid Resistance',
-        'Routine Maintenance'
-      ];
+    const categories: MaintenanceCategory[] = [
+      'Road Reconstruction',
+      'Structural Overlay',
+      'Surface Restoration',
+      'Restoration of Skid Resistance',
+      'Routine Maintenance'
+    ];
 
+    try {
+      // Calculate data for each category
       for (const category of categories) {
         const categoryData = await this.calculateCategoryData(
           category,
@@ -81,106 +84,120 @@ export class FeatureLayerCalculator {
         result.categoryLengths[category] = categoryData.length;
         result.categoryCosts[category] = categoryData.cost;
         result.segmentCounts[category] = categoryData.count;
+        
         result.totalLength += categoryData.length;
         result.totalCost += categoryData.cost;
       }
-
-      return result;
     } catch (error) {
       console.error('Error calculating maintenance data:', error);
       throw error;
     }
+
+    return result;
   }
 
   /**
-   * Calculate data for a specific category
+   * Calculate data for a specific maintenance category
    */
   private async calculateCategoryData(
     category: MaintenanceCategory,
     parameters: MaintenanceParameters,
     costs: CostInputs,
-    selectedCounty: string | 'all'
+    selectedCounty: string | 'all' | string[]
   ): Promise<{ length: number; cost: number; count: number }> {
-    const whereClause = MaintenanceQueryBuilder.buildCombinedQuery(
-      parameters,
-      selectedCounty,
-      category
-    );
+    try {
+      // Build the WHERE clause for this category
+      const whereClause = MaintenanceQueryBuilder.buildCombinedQuery(
+        parameters,
+        selectedCounty,
+        category
+      );
 
-    // Query for statistics
-    const query = new Query({
-      where: whereClause,
-      outStatistics: [
-        {
-          statisticType: 'sum',
-          onStatisticField: 'Shape_Length',
-          outStatisticFieldName: 'total_length'
-        },
-        {
-          statisticType: 'count',
-          onStatisticField: 'OBJECTID',
-          outStatisticFieldName: 'segment_count'
-        }
-      ],
-      returnGeometry: false
-    });
+      // Query to get the count of segments
+      const countQuery = new Query({
+        where: whereClause,
+        returnGeometry: false,
+        outFields: ['OBJECTID'] // Minimal field for counting
+      });
 
-    const result = await this.featureLayer.queryFeatures(query);
-    
-    if (result.features.length === 0) {
+      // Get the count of segments
+      const featureCount = await this.featureLayer.queryFeatureCount(countQuery);
+      
+      // Calculate total length using fixed segment length
+      // Each segment is 100m = 0.1km
+      const totalLengthKm = featureCount * (SEGMENT_LENGTH_METERS / 1000);
+      
+      // Calculate total area (length * width)
+      const totalAreaSqM = featureCount * SEGMENT_LENGTH_METERS * STANDARD_ROAD_WIDTH;
+      
+      // Calculate cost based on category
+      const costPerSqM = this.getCostForCategory(category, costs);
+      const totalCost = (totalAreaSqM * costPerSqM) / 1_000_000_000; // Convert to billions
+      
+      return {
+        length: totalLengthKm,
+        cost: totalCost,
+        count: featureCount
+      };
+    } catch (error) {
+      console.error(`Error calculating data for ${category}:`, error);
       return { length: 0, cost: 0, count: 0 };
     }
-
-    const stats = result.features[0].attributes;
-    const lengthKm = (stats.total_length || 0) / 1000; // Convert meters to kilometers
-    const segmentCount = stats.segment_count || 0;
-
-    // Calculate cost
-    const costPerSqm = this.getCostForCategory(category, costs);
-    const cost = lengthKm * 1000 * STANDARD_ROAD_WIDTH * costPerSqm;
-
-    return {
-      length: lengthKm,
-      cost: cost,
-      count: segmentCount
-    };
   }
 
   /**
-   * Get cost per square meter for a category
+   * Get road width for a segment (with fallback to standard width)
+   */
+  private async getAverageRoadWidth(whereClause: string): Promise<number> {
+    try {
+      // Query for road width if available
+      const query = new Query({
+        where: whereClause,
+        outFields: ['Road_Width_2018'],
+        returnGeometry: false,
+        outStatistics: [{
+          statisticType: 'avg',
+          onStatisticField: 'Road_Width_2018',
+          outStatisticFieldName: 'avgWidth'
+        }]
+      });
+
+      const result = await this.featureLayer.queryFeatures(query);
+      
+      if (result.features.length > 0 && result.features[0].attributes.avgWidth) {
+        return result.features[0].attributes.avgWidth;
+      }
+    } catch (error) {
+      console.warn('Could not get average road width, using standard width:', error);
+    }
+    
+    return STANDARD_ROAD_WIDTH;
+  }
+
+  /**
+   * Get the cost per square meter for a maintenance category
    */
   private getCostForCategory(category: MaintenanceCategory, costs: CostInputs): number {
-    switch (category) {
-      case 'Road Reconstruction':
-        return costs.rr;
-      case 'Structural Overlay':
-        return costs.so;
-      case 'Surface Restoration':
-        return costs.sr;
-      case 'Restoration of Skid Resistance':
-        return costs.rs;
-      case 'Routine Maintenance':
-        return costs.rm;
-      default:
-        return 0;
-    }
+    const costMap: Record<MaintenanceCategory, keyof CostInputs> = {
+      'Road Reconstruction': 'roadReconstruction',
+      'Structural Overlay': 'structuralOverlay',
+      'Surface Restoration': 'surfaceRestoration',
+      'Restoration of Skid Resistance': 'restorationOfSkidResistance',
+      'Routine Maintenance': 'routineMaintenance'
+    };
+    
+    return costs[costMap[category]];
   }
 
   /**
-   * Get segments for a specific category (with pagination for large datasets)
+   * Query segments for a specific category (for debugging/verification)
    */
-  async getCategorySegments(
+  async queryCategorySegments(
     category: MaintenanceCategory,
     parameters: MaintenanceParameters,
-    selectedCounty: string | 'all',
-    options: {
-      start?: number;
-      num?: number;
-      includeGeometry?: boolean;
-    } = {}
+    selectedCounty: string | 'all' | string[],
+    maxResults: number = 100
   ) {
-    const { start = 0, num = 1000, includeGeometry = false } = options;
-
     const whereClause = MaintenanceQueryBuilder.buildCombinedQuery(
       parameters,
       selectedCounty,
@@ -189,38 +206,11 @@ export class FeatureLayerCalculator {
 
     const query = new Query({
       where: whereClause,
-      outFields: ['OBJECTID', 'Route', 'LA', 'AIRI_2018', 'LRUT_2018', 'PSCI_Class_2018', 'CSC_Class_2018', 'MPD_2018'],
-      returnGeometry: includeGeometry,
-      start: start,
-      num: num,
-      orderByFields: ['OBJECTID ASC']
+      outFields: ['OBJECTID', 'Route', 'LA', 'AIRI_2018', 'LRUT_2018', 'PSCI_Class_2018'],
+      returnGeometry: true,
+      num: maxResults
     });
 
     return await this.featureLayer.queryFeatures(query);
-  }
-
-  /**
-   * Validate that required fields exist in the Feature Layer
-   */
-  async validateFields(): Promise<{ isValid: boolean; missingFields: string[] }> {
-    await this.featureLayer.load();
-
-    const requiredFields = [
-      'AIRI_2018',
-      'LRUT_2018',
-      'PSCI_Class_2018',
-      'CSC_Class_2018',
-      'MPD_2018',
-      'Shape_Length',
-      'LA'
-    ];
-
-    const availableFields = this.featureLayer.fields.map(f => f.name);
-    const missingFields = requiredFields.filter(field => !availableFields.includes(field));
-
-    return {
-      isValid: missingFields.length === 0,
-      missingFields
-    };
   }
 }

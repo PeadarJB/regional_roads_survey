@@ -37,11 +37,11 @@ export interface MaintenanceParameters {
   surfaceRestoration_psci_c: number;
 
   // Restoration of Skid Resistance
-  skidResistance_psci_a: number;
-  skidResistance_psci_b: number;
-  skidResistance_csc: number;
-  skidResistance_psci_c: number;
-  skidResistance_mpd: number;
+  restorationOfSkidResistance_psci_a: number;
+  restorationOfSkidResistance_psci_b: number;
+  restorationOfSkidResistance_csc: number;
+  restorationOfSkidResistance_psci_c: number;
+  restorationOfSkidResistance_mpd: number;
 }
 
 /**

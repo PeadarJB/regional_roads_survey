@@ -1,10 +1,11 @@
 // src/utils/featureLayerQueries.ts
-// Utility functions for building dynamic SQL queries for the Feature Layer
+// UPDATED: Support for multiple county selection
 
 import type { MaintenanceParameters, MaintenanceCategory } from '../types';
 
 /**
  * Builds SQL WHERE clauses for each maintenance category based on parameters
+ * Now supports multiple county selection
  */
 export class MaintenanceQueryBuilder {
   /**
@@ -47,17 +48,20 @@ export class MaintenanceQueryBuilder {
    * Builds SQL expression for Restoration of Skid Resistance category
    */
   static buildSkidResistanceQuery(params: MaintenanceParameters): string {
-    // Exclude segments that meet higher priority categories
+    // Exclude higher priority categories
     const notRoadReconstruction = `NOT ${this.buildRoadReconstructionQuery(params)}`;
     const notStructuralOverlay = `NOT (AIRI_2018 >= ${params.structuralOverlay_iri} OR LRUT_2018 >= ${params.structuralOverlay_rut} OR PSCI_Class_2018 <= ${params.structuralOverlay_psci})`;
     
-    // Exclude Surface Restoration
-    const notSurfaceRestoration = `NOT ((PSCI_Class_2018 <= ${params.surfaceRestoration_psci_a}) OR (PSCI_Class_2018 <= ${params.surfaceRestoration_psci_b} AND AIRI_2018 >= ${params.surfaceRestoration_iri}) OR (PSCI_Class_2018 <= ${params.surfaceRestoration_psci_c}))`;
+    // Surface Restoration conditions to exclude
+    const surfaceCondition1 = `PSCI_Class_2018 <= ${params.surfaceRestoration_psci_a}`;
+    const surfaceCondition2 = `(PSCI_Class_2018 <= ${params.surfaceRestoration_psci_b} AND AIRI_2018 >= ${params.surfaceRestoration_iri})`;
+    const surfaceCondition3 = `PSCI_Class_2018 <= ${params.surfaceRestoration_psci_c}`;
+    const notSurfaceRestoration = `NOT (${surfaceCondition1} OR ${surfaceCondition2} OR ${surfaceCondition3})`;
     
     // Skid Resistance conditions
-    const condition1 = `PSCI_Class_2018 <= ${params.skidResistance_psci_a}`;
-    const condition2 = `(PSCI_Class_2018 <= ${params.skidResistance_psci_b} AND CSC_Class_2018 <= ${params.skidResistance_csc})`;
-    const condition3 = `(PSCI_Class_2018 <= ${params.skidResistance_psci_c} AND MPD_2018 <= ${params.skidResistance_mpd})`;
+    const condition1 = `PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_a}`;
+    const condition2 = `(PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_b} AND CSC_Class_2018 <= ${params.restorationOfSkidResistance_csc})`;
+    const condition3 = `(PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_c} AND MPD_2018 <= ${params.restorationOfSkidResistance_mpd})`;
     
     return `(${notRoadReconstruction} AND ${notStructuralOverlay} AND ${notSurfaceRestoration} AND (${condition1} OR ${condition2} OR ${condition3}))`;
   }
@@ -66,61 +70,100 @@ export class MaintenanceQueryBuilder {
    * Builds SQL expression for Routine Maintenance category
    */
   static buildRoutineMaintenanceQuery(params: MaintenanceParameters): string {
-    // Routine Maintenance is everything that doesn't meet other categories
+    // Routine Maintenance is everything that doesn't fall into other categories
     const notRoadReconstruction = `NOT ${this.buildRoadReconstructionQuery(params)}`;
     const notStructuralOverlay = `NOT (AIRI_2018 >= ${params.structuralOverlay_iri} OR LRUT_2018 >= ${params.structuralOverlay_rut} OR PSCI_Class_2018 <= ${params.structuralOverlay_psci})`;
-    const notSurfaceRestoration = `NOT ((PSCI_Class_2018 <= ${params.surfaceRestoration_psci_a}) OR (PSCI_Class_2018 <= ${params.surfaceRestoration_psci_b} AND AIRI_2018 >= ${params.surfaceRestoration_iri}) OR (PSCI_Class_2018 <= ${params.surfaceRestoration_psci_c}))`;
-    const notSkidResistance = `NOT ((PSCI_Class_2018 <= ${params.skidResistance_psci_a}) OR (PSCI_Class_2018 <= ${params.skidResistance_psci_b} AND CSC_Class_2018 <= ${params.skidResistance_csc}) OR (PSCI_Class_2018 <= ${params.skidResistance_psci_c} AND MPD_2018 <= ${params.skidResistance_mpd}))`;
+    
+    // Surface Restoration conditions to exclude
+    const surfaceCondition1 = `PSCI_Class_2018 <= ${params.surfaceRestoration_psci_a}`;
+    const surfaceCondition2 = `(PSCI_Class_2018 <= ${params.surfaceRestoration_psci_b} AND AIRI_2018 >= ${params.surfaceRestoration_iri})`;
+    const surfaceCondition3 = `PSCI_Class_2018 <= ${params.surfaceRestoration_psci_c}`;
+    const notSurfaceRestoration = `NOT (${surfaceCondition1} OR ${surfaceCondition2} OR ${surfaceCondition3})`;
+    
+    // Skid Resistance conditions to exclude
+    const skidCondition1 = `PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_a}`;
+    const skidCondition2 = `(PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_b} AND CSC_Class_2018 <= ${params.restorationOfSkidResistance_csc})`;
+    const skidCondition3 = `(PSCI_Class_2018 >= ${params.restorationOfSkidResistance_psci_c} AND MPD_2018 <= ${params.restorationOfSkidResistance_mpd})`;
+    const notSkidResistance = `NOT (${skidCondition1} OR ${skidCondition2} OR ${skidCondition3})`;
     
     return `(${notRoadReconstruction} AND ${notStructuralOverlay} AND ${notSurfaceRestoration} AND ${notSkidResistance})`;
   }
 
   /**
-   * Gets the SQL query for a specific maintenance category
+   * Builds county filter SQL expression
+   * Now supports multiple county selection
    */
-  static getCategoryQuery(category: MaintenanceCategory, params: MaintenanceParameters): string {
-    switch (category) {
-      case 'Road Reconstruction':
-        return this.buildRoadReconstructionQuery(params);
-      case 'Structural Overlay':
-        return this.buildStructuralOverlayQuery(params);
-      case 'Surface Restoration':
-        return this.buildSurfaceRestorationQuery(params);
-      case 'Restoration of Skid Resistance':
-        return this.buildSkidResistanceQuery(params);
-      case 'Routine Maintenance':
-        return this.buildRoutineMaintenanceQuery(params);
-      default:
-        return '1=1'; // Show all if no category
+  static buildCountyFilter(selectedCounty: string | 'all' | string[]): string {
+    // Handle 'all' or empty selection
+    if (selectedCounty === 'all' || 
+        (Array.isArray(selectedCounty) && selectedCounty.length === 0)) {
+      return '1=1';
     }
+    
+    // Handle single county (legacy support)
+    if (typeof selectedCounty === 'string') {
+      return `LA = '${selectedCounty}'`;
+    }
+    
+    // Handle multiple counties
+    if (Array.isArray(selectedCounty)) {
+      if (selectedCounty.length === 1) {
+        return `LA = '${selectedCounty[0]}'`;
+      }
+      // Build IN clause for multiple counties
+      const countyList = selectedCounty.map(county => `'${county}'`).join(', ');
+      return `LA IN (${countyList})`;
+    }
+    
+    return '1=1';
   }
 
   /**
-   * Builds a combined query including county filter and category filter
+   * Builds combined query with category and county filter
    */
   static buildCombinedQuery(
     params: MaintenanceParameters,
-    selectedCounty?: string,
-    selectedCategory?: MaintenanceCategory | null
+    selectedCounty: string | 'all' | string[],
+    category?: MaintenanceCategory
   ): string {
-    const conditions: string[] = [];
-
-    // Add county filter if specified
-    if (selectedCounty && selectedCounty !== 'all') {
-      conditions.push(`LA = '${selectedCounty}'`);
+    const countyFilter = this.buildCountyFilter(selectedCounty);
+    
+    if (!category) {
+      return countyFilter;
     }
-
-    // Add category filter if specified
-    if (selectedCategory) {
-      conditions.push(this.getCategoryQuery(selectedCategory, params));
+    
+    let categoryQuery: string;
+    
+    switch (category) {
+      case 'Road Reconstruction':
+        categoryQuery = this.buildRoadReconstructionQuery(params);
+        break;
+      case 'Structural Overlay':
+        categoryQuery = this.buildStructuralOverlayQuery(params);
+        break;
+      case 'Surface Restoration':
+        categoryQuery = this.buildSurfaceRestorationQuery(params);
+        break;
+      case 'Restoration of Skid Resistance':
+        categoryQuery = this.buildSkidResistanceQuery(params);
+        break;
+      case 'Routine Maintenance':
+        categoryQuery = this.buildRoutineMaintenanceQuery(params);
+        break;
+      default:
+        return countyFilter;
     }
-
-    // Combine all conditions with AND
-    return conditions.length > 0 ? conditions.join(' AND ') : '1=1';
+    
+    // Combine county and category filters
+    if (countyFilter === '1=1') {
+      return categoryQuery;
+    }
+    
+    return `${countyFilter} AND ${categoryQuery}`;
   }
 
   /**
-   * Builds queries for all categories (useful for calculating totals)
+   * Returns all category queries as a map
    */
   static buildAllCategoryQueries(params: MaintenanceParameters): Record<MaintenanceCategory, string> {
     return {
