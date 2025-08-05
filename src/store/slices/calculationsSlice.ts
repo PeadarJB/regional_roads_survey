@@ -5,6 +5,7 @@ import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
 import type { MaintenanceCategory } from '../../types';
 import { calculateMaintenanceData } from '../../utils/calculations';
+import { FeatureLayerCalculator } from '../../utils/featureLayerCalculations';
 
 export interface CalculationsSlice {
   // Calculation results
@@ -39,34 +40,65 @@ const initialCalculationState: Omit<CalculationsSlice, 'runCalculations'> = {
 export const createCalculationsSlice: StateCreator<StoreState, [], [], CalculationsSlice> = (set, get) => ({
   ...initialCalculationState,
   
-  runCalculations: () => {
+  runCalculations: async () => {
     const state = get();
     
     // Get required data from other slices
-    const { roadNetwork } = state;
-    const { parameters } = state;
-    const { costs } = state;
-    const { selectedCounty } = state;
+    const { roadNetwork, roadNetworkLayer, parameters, costs, selectedCounty } = state;
     
-    // Skip calculation if we don't have road network data yet
-    if (roadNetwork.length === 0) {
-      return;
+    // If Feature Layer is available, use it for calculations
+    if (roadNetworkLayer) {
+      const calculator = new FeatureLayerCalculator(roadNetworkLayer);
+      
+      try {
+        const results = await calculator.calculateMaintenanceData(
+          parameters,
+          costs,
+          selectedCounty
+        );
+        
+        set({
+          categoryLengths: results.categoryLengths,
+          categoryCosts: results.categoryCosts,
+          totalLength: results.totalLength,
+          totalCost: results.totalCost
+        });
+      } catch (error) {
+        console.error('Error calculating from Feature Layer:', error);
+        // Fallback to static data if needed
+        if (roadNetwork.length > 0) {
+            const results = calculateMaintenanceData(
+              roadNetwork,
+              parameters,
+              costs,
+              selectedCounty
+            );
+            
+            // Update the store with calculated results
+            set({
+              categoryLengths: results.categoryLengths,
+              categoryCosts: results.categoryCosts,
+              totalLength: results.totalLength,
+              totalCost: results.totalCost
+            });
+        }
+      }
+    } else if (roadNetwork.length > 0) {
+        // Existing static data calculation logic
+        const results = calculateMaintenanceData(
+          roadNetwork,
+          parameters,
+          costs,
+          selectedCounty
+        );
+        
+        // Update the store with calculated results
+        set({
+          categoryLengths: results.categoryLengths,
+          categoryCosts: results.categoryCosts,
+          totalLength: results.totalLength,
+          totalCost: results.totalCost
+        });
     }
-    
-    // Run the calculation
-    const results = calculateMaintenanceData(
-      roadNetwork,
-      parameters,
-      costs,
-      selectedCounty
-    );
-    
-    // Update the store with calculated results
-    set({
-      categoryLengths: results.categoryLengths,
-      categoryCosts: results.categoryCosts,
-      totalLength: results.totalLength,
-      totalCost: results.totalCost
-    });
   }
 });
