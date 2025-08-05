@@ -42,3 +42,33 @@ export const DEFAULT_COST_INPUTS: CostInputs = {
   rs: 5,  // Restoration of Skid Resistance
   rm: 1,  // Routine Maintenance
 };
+
+// Road specifications
+export const ROAD_SPECIFICATIONS = {
+  STANDARD_WIDTH: 7.5, // meters
+  SEGMENT_LENGTH: 100, // meters (fixed length per segment)
+} as const;
+
+// Map configuration
+export const MAP_CONFIG = {
+  DEFAULT_CENTER: [-8.2439, 53.4129] as [number, number], // Ireland center
+  DEFAULT_ZOOM: 7,
+  MIN_ZOOM: 6,
+  MAX_ZOOM: 18,
+} as const;
+
+// Feature Layer configuration
+export const FEATURE_LAYER_CONFIG = {
+  URL: 'https://services-eu1.arcgis.com/yKemAZ93UMQ59Hq1/arcgis/rest/services/RMO_RNM_gdb/FeatureServer/0',
+  TITLE: 'Road Network',
+  ID: 'road-network-layer',
+} as const;
+
+// Chart colors for maintenance categories
+export const CATEGORY_COLORS = {
+  'Road Reconstruction': '#ff4d4f',
+  'Structural Overlay': '#ff7a45',
+  'Surface Restoration': '#40a9ff',
+  'Restoration of Skid Resistance': '#73d13d',
+  'Routine Maintenance': '#36cfc9',
+} as const;
