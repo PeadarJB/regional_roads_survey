@@ -146,44 +146,17 @@ export class FeatureLayerCalculator {
   }
 
   /**
-   * Get road width for a segment (with fallback to standard width)
-   */
-  private async getAverageRoadWidth(whereClause: string): Promise<number> {
-    try {
-      // Query for road width if available
-      const query = new Query({
-        where: whereClause,
-        outFields: ['Road_Width_2018'],
-        returnGeometry: false,
-        outStatistics: [{
-          statisticType: 'avg',
-          onStatisticField: 'Road_Width_2018',
-          outStatisticFieldName: 'avgWidth'
-        }]
-      });
-
-      const result = await this.featureLayer.queryFeatures(query);
-      
-      if (result.features.length > 0 && result.features[0].attributes.avgWidth) {
-        return result.features[0].attributes.avgWidth;
-      }
-    } catch (error) {
-      console.warn('Could not get average road width, using standard width:', error);
-    }
-    
-    return STANDARD_ROAD_WIDTH;
-  }
-
-  /**
    * Get the cost per square meter for a maintenance category
    */
   private getCostForCategory(category: MaintenanceCategory, costs: CostInputs): number {
+    // Map maintenance categories to CostInputs property names
+    // Based on the typical abbreviations used in the dashboard
     const costMap: Record<MaintenanceCategory, keyof CostInputs> = {
-      'Road Reconstruction': 'roadReconstruction',
-      'Structural Overlay': 'structuralOverlay',
-      'Surface Restoration': 'surfaceRestoration',
-      'Restoration of Skid Resistance': 'restorationOfSkidResistance',
-      'Routine Maintenance': 'routineMaintenance'
+      'Road Reconstruction': 'rr' as keyof CostInputs,
+      'Structural Overlay': 'so' as keyof CostInputs,
+      'Surface Restoration': 'sr' as keyof CostInputs,
+      'Restoration of Skid Resistance': 'rs' as keyof CostInputs,
+      'Routine Maintenance': 'rm' as keyof CostInputs
     };
     
     return costs[costMap[category]];

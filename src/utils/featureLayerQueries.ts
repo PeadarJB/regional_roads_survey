@@ -124,7 +124,7 @@ export class MaintenanceQueryBuilder {
   static buildCombinedQuery(
     params: MaintenanceParameters,
     selectedCounty: string | 'all' | string[],
-    category?: MaintenanceCategory
+    category?: MaintenanceCategory | null
   ): string {
     const countyFilter = this.buildCountyFilter(selectedCounty);
     

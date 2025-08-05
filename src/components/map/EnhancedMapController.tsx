@@ -62,6 +62,7 @@ const EnhancedMapController: React.FC = () => {
       try {
         // Clear existing highlights
         highlightLayerRef.current!.removeAll();
+        
 
         // Build the query
         const whereClause = MaintenanceQueryBuilder.buildCombinedQuery(
