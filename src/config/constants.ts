@@ -25,11 +25,11 @@ export const DEFAULT_MAINTENANCE_PARAMETERS: MaintenanceParameters = {
   surfaceRestoration_psci_c: 7,
 
   // Restoration of Skid Resistance
-  skidResistance_psci_a: 7,
-  skidResistance_psci_b: 8,
-  skidResistance_csc: 0.35,
-  skidResistance_psci_c: 9,
-  skidResistance_mpd: 0.7,
+  restorationOfSkidResistance_psci_a: 7,
+  restorationOfSkidResistance_psci_b: 8,
+  restorationOfSkidResistance_csc: 0.35, // Coefficient of Surface Condition
+  restorationOfSkidResistance_psci_c: 9,
+  restorationOfSkidResistance_mpd: 0.7 // Minimum Pavement Depth
 };
 
 /**
