@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Typography, Tag } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
-import MapController from './MapController';
+import EnhancedMapController from './EnhancedMapController';
 
 const { Text } = Typography;
 
@@ -86,8 +86,8 @@ const MapComponent: React.FC = () => {
           </div>
         )}
       </div>
-      {/* Map Controller handles reactive updates based on state changes */}
-      <MapController />
+      {/* Enhanced Map Controller now handles all reactive updates using direct Feature Layer queries */}
+      <EnhancedMapController />
     </>
   );
 };
