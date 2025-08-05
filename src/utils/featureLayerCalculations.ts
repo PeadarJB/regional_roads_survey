@@ -152,15 +152,15 @@ export class FeatureLayerCalculator {
   private getCostForCategory(category: MaintenanceCategory, costs: CostInputs): number {
     switch (category) {
       case 'Road Reconstruction':
-        return costs.roadReconstruction;
+        return costs.rr;
       case 'Structural Overlay':
-        return costs.structuralOverlay;
+        return costs.so;
       case 'Surface Restoration':
-        return costs.surfaceRestoration;
+        return costs.sr;
       case 'Restoration of Skid Resistance':
-        return costs.skidResistance;
+        return costs.rs;
       case 'Routine Maintenance':
-        return costs.routineMaintenance;
+        return costs.rm;
       default:
         return 0;
     }
