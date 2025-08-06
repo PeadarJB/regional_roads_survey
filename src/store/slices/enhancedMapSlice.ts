@@ -1,5 +1,6 @@
 // src/store/slices/enhancedMapSlice.ts
 // Enhanced map slice with spatial query capabilities
+// UPDATED: Calculates length based on a fixed 100m segment length.
 
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../../store/usePavementStore';
@@ -10,7 +11,6 @@ import FeatureLayer from '@arcgis/core/layers/FeatureLayer';
 import GraphicsLayer from '@arcgis/core/layers/GraphicsLayer';
 import Query from '@arcgis/core/rest/support/Query';
 import type Field from '@arcgis/core/layers/support/Field';
-import type FeatureSet from '@arcgis/core/rest/support/FeatureSet';
 import { API_KEY, WEB_MAP_ID } from '../../config/arcgis';
 import { MaintenanceQueryBuilder } from '../../utils/featureLayerQueries';
 
@@ -108,7 +108,6 @@ export const createEnhancedMapSlice: StateCreator<StoreState, [], [], EnhancedMa
           'PSCI_Class_2018', 
           'CSC_Class_2018', 
           'MPD_2018',
-          'Shape_Length'
         ];
         
         const availableFields = roadNetworkLayer.fields.map((f: Field) => f.name);
@@ -171,31 +170,26 @@ export const createEnhancedMapSlice: StateCreator<StoreState, [], [], EnhancedMa
       
       const query = new Query({
         where: whereClause,
-        outFields: ['OBJECTID', 'Shape_Length', 'Route', 'LA'],
-        returnGeometry: true,
-        outSpatialReference: state.mapView?.spatialReference
+        outFields: ['OBJECTID', 'Route', 'LA'],
+        returnGeometry: false, // Geometry not needed for count
       });
       
-      // Execute the query
-      const featureSet: FeatureSet = await roadNetworkLayer.queryFeatures(query);
+      // Execute the query to get the count of features
+      const featureCount = await roadNetworkLayer.queryFeatureCount(query);
       
-      console.log(`Query results for ${targetCategory}: ${featureSet.features.length} features`);
+      console.log(`Query results for ${targetCategory}: ${featureCount} features`);
       
-      // Calculate total length (Shape_Length is in meters)
-      const totalLength = featureSet.features.reduce((sum, feature) => {
-        return sum + (feature.attributes.Shape_Length || 0);
-      }, 0) / 1000; // Convert to kilometers
+      // Calculate total length (each segment is 100m = 0.1km)
+      const totalLength = featureCount * 0.1;
       
       // Update query results
       set({
         queryResults: [{
           category: targetCategory,
-          featureCount: featureSet.features.length,
+          featureCount: featureCount,
           totalLength: totalLength
         }]
       });
-      
-      // Highlight features on map (delegate to MapController)
       
     } catch (error) {
       console.error('Error executing maintenance query:', error);
@@ -222,7 +216,7 @@ export const createEnhancedMapSlice: StateCreator<StoreState, [], [], EnhancedMa
         'Routine Maintenance'
       ];
       
-      // Query each category
+      // Query each category to get the count
       for (const category of categories) {
         const whereClause = MaintenanceQueryBuilder.buildCombinedQuery(
           parameters,
@@ -230,7 +224,6 @@ export const createEnhancedMapSlice: StateCreator<StoreState, [], [], EnhancedMa
           category
         );
         
-        // First get count
         const countQuery = new Query({
           where: whereClause,
           returnGeometry: false
@@ -238,19 +231,8 @@ export const createEnhancedMapSlice: StateCreator<StoreState, [], [], EnhancedMa
         
         const featureCount = await roadNetworkLayer.queryFeatureCount(countQuery);
         
-        // Then get total length
-        const statsQuery = new Query({
-          where: whereClause,
-          outStatistics: [{
-            statisticType: 'sum',
-            onStatisticField: 'Shape_Length',
-            outStatisticFieldName: 'total_length'
-          }],
-          returnGeometry: false
-        });
-        
-        const statsResult = await roadNetworkLayer.queryFeatures(statsQuery);
-        const totalLength = statsResult.features[0]?.attributes.total_length / 1000 || 0; // Convert to km
+        // Calculate length from count (100m per segment)
+        const totalLength = featureCount * 0.1;
         
         results.push({
           category,

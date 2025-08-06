@@ -11,7 +11,7 @@ import { type AuthSlice, createAuthSlice } from './slices/authSlice';
 import { type ParametersSlice, createParametersSlice } from './slices/parametersSlice';
 import { type FiltersSlice, createFiltersSlice } from './slices/filtersSlice';
 import { type CalculationsSlice, createCalculationsSlice } from './slices/calculationsSlice';
-import { type MapSlice, createMapSlice } from './slices/mapSlice';
+import { type EnhancedMapSlice, createEnhancedMapSlice } from './slices/enhancedMapSlice'; 
 import { type UISlice, createUISlice } from './slices/uiSlice';
 
 
@@ -25,7 +25,7 @@ export type StoreState = DataSlice &
   ParametersSlice &
   FiltersSlice &
   CalculationsSlice &
-  MapSlice &
+  EnhancedMapSlice &
   UISlice;
 
 // --- MAIN STORE CREATION ---
@@ -41,7 +41,7 @@ export const usePavementStore = create<StoreState>()(
           ...createParametersSlice(...a),
           ...createFiltersSlice(...a),
           ...createCalculationsSlice(...a),
-          ...createMapSlice(...a),
+          ...createEnhancedMapSlice(...a),
           ...createUISlice(...a),
         }),
         {
