@@ -13,7 +13,7 @@ const LOGO_PATHS = {
 export interface ReportData {
   totalCost: number;
   totalLength: number;
-  selectedCounty: string;
+  selectedCounty: string | 'all' | string[]; // UPDATED TYPE
   parameters: MaintenanceParameters;
   costs: CostInputs;
   categoryLengths: Record<MaintenanceCategory, number>;
@@ -49,6 +49,22 @@ const getImageBase64 = async (url: string): Promise<string> => {
     img.onerror = reject;
     img.src = url;
   });
+};
+
+/**
+ * Formats the county selection for display in the report
+ */
+const formatCountySelection = (selectedCounty: string | 'all' | string[]): string => {
+  if (selectedCounty === 'all') {
+    return 'All Local Authorities';
+  }
+  if (Array.isArray(selectedCounty)) {
+    if (selectedCounty.length === 1) {
+      return selectedCounty[0];
+    }
+    return `${selectedCounty.length} Local Authorities Selected`;
+  }
+  return selectedCounty;
 };
 
 /**
@@ -120,9 +136,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   yPosition += 10;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'normal');
-  const countyText = data.selectedCounty === 'all' ? 
-    'All Local Authorities' : 
-    data.selectedCounty;
+  const countyText = formatCountySelection(data.selectedCounty); // UPDATED
   doc.text(countyText, pageWidth / 2, yPosition, { align: 'center' });
   
   yPosition += 15;
@@ -202,7 +216,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
+      textColor: [255, 255, 255],
       fontSize: 11,
       fontStyle: 'bold'
     },
@@ -211,7 +225,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     },
     footStyles: {
       fillColor: [240, 240, 240],
-      textColor: [0, 0, 0], // Fixed: RGB array instead of single number
+      textColor: [0, 0, 0],
       fontStyle: 'bold'
     },
     didParseCell: function(data) {
@@ -243,7 +257,6 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     ['', 'PSCI (B) & IRI', `≤ ${data.parameters.surfaceRestoration_psci_b} & IRI ≥ ${data.parameters.surfaceRestoration_iri}`, ''],
     ['', 'PSCI (C)', `≤ ${data.parameters.surfaceRestoration_psci_c}`, ''],
     ['Skid Resistance', 'PSCI (A)', `≤ ${data.parameters.restorationOfSkidResistance_psci_a}`, ''],
-
     ['', 'PSCI (B) & CSC', `≤ ${data.parameters.restorationOfSkidResistance_psci_b} & CSC ≤ ${data.parameters.restorationOfSkidResistance_csc}`, ''],
     ['', 'PSCI (C) & MPD', `≤ ${data.parameters.restorationOfSkidResistance_psci_c} & MPD ≤ ${data.parameters.restorationOfSkidResistance_mpd}`, 'mm']
   ];
@@ -255,15 +268,13 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
+      textColor: [255, 255, 255],
       fontSize: 10,
       fontStyle: 'bold'
     },
     bodyStyles: {
       fontSize: 9
     },
-    // Fixed: Removed cellWidth properties that don't exist in AutoTableStyles
-    // You can control column widths through tableWidth and letting autoTable calculate proportions
     tableWidth: 'auto'
   });
 
@@ -291,7 +302,7 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     theme: 'grid',
     headStyles: {
       fillColor: [66, 139, 202],
-      textColor: [255, 255, 255], // Fixed: RGB array instead of single number
+      textColor: [255, 255, 255],
       fontSize: 10,
       fontStyle: 'bold'
     },
@@ -301,7 +312,8 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
   });
 
   // Save the PDF
-  doc.save(`RMO_Report_${data.selectedCounty}_${new Date().toISOString().split('T')[0]}.pdf`);
+  const fileNameCounty = Array.isArray(data.selectedCounty) ? 'Multiple' : data.selectedCounty;
+  doc.save(`RMO_Report_${fileNameCounty}_${new Date().toISOString().split('T')[0]}.pdf`);
 };
 
 /**
@@ -336,15 +348,16 @@ export const generateCsvReport = (data: ReportData): void => {
   
   // Add metadata
   csvContent += `\n"Generated:",${timestamp}\n`;
-  csvContent += `"Local Authority:",${data.selectedCounty === 'all' ? 'All Counties' : data.selectedCounty}\n`;
+  csvContent += `"Local Authority:",${formatCountySelection(data.selectedCounty)}\n`; // UPDATED
   
   // Create and trigger download
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   
+  const fileNameCounty = Array.isArray(data.selectedCounty) ? 'Multiple' : data.selectedCounty;
   link.setAttribute('href', url);
-  link.setAttribute('download', `RMO_Report_Data_${data.selectedCounty}_${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute('download', `RMO_Report_Data_${fileNameCounty}_${new Date().toISOString().split('T')[0]}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

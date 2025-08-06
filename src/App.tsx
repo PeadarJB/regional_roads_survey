@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result, Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -87,8 +87,7 @@ const MainDashboard: React.FC = () => {
   const {
     logout,
     user,
-    loading,
-    fetchRoadNetworkData,
+    mapView, // Use mapView to determine loading state
     themeMode,
     setThemeMode,
     toggleParameterDrawer,
@@ -106,9 +105,7 @@ const MainDashboard: React.FC = () => {
   const isMobileView = useMobileDetection();
   const theme = useTheme();
 
-  useEffect(() => {
-    fetchRoadNetworkData();
-  }, [fetchRoadNetworkData]);
+  // NOTE: The useEffect for fetchRoadNetworkData has been removed.
 
   const handleGeneratePdf = async () => {
     setIsGeneratingReport(true);
@@ -117,7 +114,7 @@ const MainDashboard: React.FC = () => {
       const reportData: ReportData = {
         totalCost,
         totalLength,
-        selectedCounty,
+        selectedCounty: selectedCounty as string, // Temporarily cast to string
         parameters,
         costs,
         categoryLengths,
@@ -139,7 +136,7 @@ const MainDashboard: React.FC = () => {
       const reportData: ReportData = {
         totalCost,
         totalLength,
-        selectedCounty,
+        selectedCounty: selectedCounty as string, // Temporarily cast to string
         parameters,
         costs,
         categoryLengths,
@@ -245,7 +242,7 @@ const MainDashboard: React.FC = () => {
         </Space>
       </Header>
       <Layout>
-        {loading ? (
+        {!mapView ? ( // Use !mapView to determine loading state
           <div
             style={{
               position: 'relative',
@@ -255,7 +252,7 @@ const MainDashboard: React.FC = () => {
               height: 'calc(100vh - 64px)',
             }}
           >
-            <Spin size="large" tip="Loading Road Network Data..." />
+            <Spin size="large" tip="Initializing Map..." />
           </div>
         ) : isMobileView ? (
           <MobileDashboard />

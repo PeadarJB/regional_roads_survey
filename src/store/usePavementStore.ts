@@ -5,7 +5,6 @@ import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 
 // Import slice interfaces and creators from their respective files
-import { type DataSlice, createDataSlice } from './slices/dataSlice';
 import { type ThemeSlice, createThemeSlice } from './slices/themeSlice';
 import { type AuthSlice, createAuthSlice } from './slices/authSlice';
 import { type ParametersSlice, createParametersSlice } from './slices/parametersSlice';
@@ -19,7 +18,7 @@ import { type UISlice, createUISlice } from './slices/uiSlice';
  * The combined state type for the entire application.
  * We use an intersection of all slice types to create a single, unified state shape.
  */
-export type StoreState = DataSlice &
+export type StoreState =
   ThemeSlice &
   AuthSlice &
   ParametersSlice &
@@ -35,7 +34,6 @@ export const usePavementStore = create<StoreState>()(
     subscribeWithSelector(
       persist(
         (...a) => ({
-          ...createDataSlice(...a),
           ...createThemeSlice(...a),
           ...createAuthSlice(...a),
           ...createParametersSlice(...a),
