@@ -8,25 +8,31 @@ import EnhancedMapController from './EnhancedMapController';
 
 const MapComponent: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const initializeMap = usePavementStore((state) => state.initializeMap);
-  const mapView = usePavementStore((state) => state.mapView);
-  const selectedCategory = usePavementStore((state) => state.selectedCategory);
-  const setSelectedCategory = usePavementStore((state) => state.setSelectedCategory);
+  // Select actions and state from the store
+  const { 
+    initializeMap, 
+    clearMap, 
+    mapView, 
+    selectedCategory, 
+    setSelectedCategory,
+    roadNetworkLayer 
+  } = usePavementStore();
+  
   const isMobileView = usePavementStore((state) => state.isMobileView);
-  const roadNetworkLayer = usePavementStore((state) => state.roadNetworkLayer);
 
-  // Initialize the map when component mounts
+  // Initialize the map when component mounts and clean up on unmount
   useEffect(() => {
-    if (mapRef.current && !mapView) {
+    if (mapRef.current) {
       console.log('Initializing map from MapComponent...');
       initializeMap(mapRef.current);
     }
     
-    // Cleanup function
+    // Cleanup function: This will run when the component is unmounted
     return () => {
-      // Map cleanup is handled by the store
+      console.log('Cleaning up map...');
+      clearMap();
     };
-  }, [initializeMap, mapView]);
+  }, [initializeMap, clearMap]); // Dependencies for the effect
 
   // Log layer status for debugging
   useEffect(() => {
@@ -69,24 +75,7 @@ const MapComponent: React.FC = () => {
           </div>
         )}
         
-        {/* Loading indicator */}
-        {!mapView && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 10,
-              background: 'rgba(255, 255, 255, 0.9)',
-              padding: '16px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-            }}
-          >
-            Loading map...
-          </div>
-        )}
+        {/* This loading indicator is now handled in App.tsx */}
       </div>
       
       {/* Enhanced Map Controller handles all reactive updates */}
