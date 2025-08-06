@@ -1,5 +1,5 @@
 // src/components/controls/LocalAuthorityFilter.tsx
-// NEW: Multi-select Local Authority filter component
+// FIXED: Replaced deprecated 'dropdownRender' with 'popupRender'.
 
 import React, { useMemo } from 'react';
 import { Select, Button, Space, Typography, Tag } from 'antd';
@@ -19,7 +19,6 @@ const LocalAuthorityFilter: React.FC = () => {
   const clearCountySelection = usePavementStore((state) => state.clearCountySelection);
   const isMobileView = usePavementStore((state) => state.isMobileView);
 
-  // Convert selection to array format for the Select component
   const selectValue = useMemo(() => {
     if (selectedCounty === 'all') {
       return availableCounties;
@@ -31,21 +30,16 @@ const LocalAuthorityFilter: React.FC = () => {
     return [];
   }, [selectedCounty, availableCounties]);
 
-  // Handle selection change
   const handleChange = (value: string[]) => {
     if (value.length === 0) {
-      // If nothing selected, default to 'all'
       selectAllCounties();
     } else if (value.length === availableCounties.length) {
-      // If all counties selected, use 'all' for efficiency
       selectAllCounties();
     } else {
-      // Otherwise, set the specific selection
       setSelectedCounty(value);
     }
   };
 
-  // Custom tag render for selected items
   const tagRender = (props: {
       label: React.ReactNode;
       value: string;
@@ -69,7 +63,6 @@ const LocalAuthorityFilter: React.FC = () => {
     );
   };
 
-  // Display text showing selection status
   const getSelectionText = () => {
     if (selectedCounty === 'all' || selectValue.length === availableCounties.length) {
       return 'All Local Authorities';
@@ -102,7 +95,7 @@ const LocalAuthorityFilter: React.FC = () => {
         filterOption={(input, option) =>
           option?.children?.toString().toLowerCase().includes(input.toLowerCase()) ?? false
         }
-        dropdownRender={(menu) => (
+        popupRender={(menu) => ( // UPDATED from dropdownRender
           <>
             <div style={{ padding: '8px', borderBottom: `1px solid ${theme.colorBorder}` }}>
               <Space>
@@ -110,9 +103,7 @@ const LocalAuthorityFilter: React.FC = () => {
                   type="link"
                   size="small"
                   icon={<CheckOutlined />}
-                  onClick={() => {
-                    selectAllCounties();
-                  }}
+                  onClick={selectAllCounties}
                 >
                   Select All
                 </Button>
@@ -120,9 +111,7 @@ const LocalAuthorityFilter: React.FC = () => {
                   type="link"
                   size="small"
                   icon={<CloseOutlined />}
-                  onClick={() => {
-                    clearCountySelection();
-                  }}
+                  onClick={clearCountySelection}
                 >
                   Clear All
                 </Button>

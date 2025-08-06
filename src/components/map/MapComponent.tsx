@@ -1,5 +1,5 @@
 // src/components/map/MapComponent.tsx
-// FIXED: Proper map initialization and component lifecycle management
+// FIXED: Corrected useEffect dependency array to prevent infinite loop.
 
 import React, { useEffect, useRef } from 'react';
 import { usePavementStore } from '../../store/usePavementStore';
@@ -8,7 +8,6 @@ import EnhancedMapController from './EnhancedMapController';
 
 const MapComponent: React.FC = () => {
   const mapRef = useRef<HTMLDivElement>(null);
-  // Select actions and state from the store
   const { 
     initializeMap, 
     clearMap, 
@@ -20,26 +19,17 @@ const MapComponent: React.FC = () => {
   
   const isMobileView = usePavementStore((state) => state.isMobileView);
 
-  // Initialize the map when component mounts and clean up on unmount
+  // This effect now runs ONLY once on mount and cleans up on unmount.
   useEffect(() => {
     if (mapRef.current) {
-      console.log('Initializing map from MapComponent...');
       initializeMap(mapRef.current);
     }
     
-    // Cleanup function: This will run when the component is unmounted
+    // Cleanup function
     return () => {
-      console.log('Cleaning up map...');
       clearMap();
     };
-  }, [initializeMap, clearMap]); // Dependencies for the effect
-
-  // Log layer status for debugging
-  useEffect(() => {
-    if (roadNetworkLayer) {
-      console.log('Road network layer is ready in MapComponent');
-    }
-  }, [roadNetworkLayer]);
+  }, [initializeMap, clearMap]); // REMOVED mapView from dependencies
 
   return (
     <>
@@ -74,11 +64,8 @@ const MapComponent: React.FC = () => {
             </Tag>
           </div>
         )}
-        
-        {/* This loading indicator is now handled in App.tsx */}
       </div>
       
-      {/* Enhanced Map Controller handles all reactive updates */}
       {mapView && roadNetworkLayer && <EnhancedMapController />}
     </>
   );

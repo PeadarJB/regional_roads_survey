@@ -1,4 +1,5 @@
 // src/App.tsx
+// FIXED: Corrected Spin logic to allow dashboard to render and initialize.
 import React from 'react';
 import { Button, Layout, Spin, Switch, Typography, Space, Result, Dropdown, message } from 'antd';
 import type { MenuProps } from 'antd';
@@ -23,9 +24,6 @@ import { generatePdfReport, generateCsvReport, type ReportData } from './utils/r
 const { Header } = Layout;
 const { Title, Text } = Typography;
 
-/**
- * The LoginScreen component is shown to unauthenticated users.
- */
 const LoginScreen: React.FC = () => {
   const login = usePavementStore((state) => state.login);
   const theme = useTheme();
@@ -41,53 +39,27 @@ const LoginScreen: React.FC = () => {
       }}
     >
       <div style={{ textAlign: 'center' }}>
-        {/* Organization Logos */}
         <Space size="large" style={{ marginBottom: 32 }}>
-          <img 
-            src="/img/DoT_Logo.png" 
-            alt="Department of Transport, Tourism and Sport" 
-            style={{ height: 40 }}
-          />
-          <img 
-            src="/img/RMO-Logo-rebrand.jpg" 
-            alt="Regional & Local Roads Management Office" 
-            style={{ height: 40 }}
-          />
-          <img 
-            src="/img/PMS-Logo.png" 
-            alt="PMS" 
-            style={{ height: 40 }}
-          />
+          <img src="/img/DoT_Logo.png" alt="Department of Transport, Tourism and Sport" style={{ height: 40 }} />
+          <img src="/img/RMO-Logo-rebrand.jpg" alt="Regional & Local Roads Management Office" style={{ height: 40 }} />
+          <img src="/img/PMS-Logo.png" alt="PMS" style={{ height: 40 }} />
         </Space>
-        
         <Result
           icon={<LoginOutlined style={{ color: theme.colorPrimary }} />}
           title="Regional Roads Survey Dashboard"
           subTitle="Please log in to access the dashboard."
-          extra={
-            <Button
-              type="primary"
-              size="large"
-              onClick={() => login({ username: 'RMO_User' })}
-            >
-              Log In
-            </Button>
-          }
+          extra={<Button type="primary" size="large" onClick={() => login({ username: 'RMO_User' })}>Log In</Button>}
         />
       </div>
     </Layout>
   );
 };
 
-/**
- * The MainDashboard component is the core application UI for authenticated users.
- */
 const MainDashboard: React.FC = () => {
-  // Select all necessary state and actions from the store
   const {
     logout,
     user,
-    mapView, // Use mapView to determine loading state
+    mapView,
     themeMode,
     setThemeMode,
     toggleParameterDrawer,
@@ -105,21 +77,11 @@ const MainDashboard: React.FC = () => {
   const isMobileView = useMobileDetection();
   const theme = useTheme();
 
-  // NOTE: The useEffect for fetchRoadNetworkData has been removed.
-
   const handleGeneratePdf = async () => {
     setIsGeneratingReport(true);
     message.loading({ content: 'Generating PDF Report...', key: 'report' });
     try {
-      const reportData: ReportData = {
-        totalCost,
-        totalLength,
-        selectedCounty: selectedCounty as string, // Temporarily cast to string
-        parameters,
-        costs,
-        categoryLengths,
-        categoryCosts,
-      };
+      const reportData: ReportData = { totalCost, totalLength, selectedCounty, parameters, costs, categoryLengths, categoryCosts };
       await generatePdfReport(reportData);
       message.success({ content: 'PDF Report downloaded!', key: 'report', duration: 2 });
     } catch (error) {
@@ -133,15 +95,7 @@ const MainDashboard: React.FC = () => {
   const handleGenerateCsv = () => {
     setIsGeneratingReport(true);
     try {
-      const reportData: ReportData = {
-        totalCost,
-        totalLength,
-        selectedCounty: selectedCounty as string, // Temporarily cast to string
-        parameters,
-        costs,
-        categoryLengths,
-        categoryCosts,
-      };
+      const reportData: ReportData = { totalCost, totalLength, selectedCounty, parameters, costs, categoryLengths, categoryCosts };
       generateCsvReport(reportData);
       message.success('CSV Data downloaded!');
     } catch (error) {
@@ -153,18 +107,8 @@ const MainDashboard: React.FC = () => {
   };
 
   const menuItems: MenuProps['items'] = [
-    {
-      key: 'pdf',
-      label: 'Download PDF Report',
-      icon: <FilePdfOutlined />,
-      onClick: handleGeneratePdf,
-    },
-    {
-      key: 'csv',
-      label: 'Download CSV Data',
-      icon: <FileExcelOutlined />,
-      onClick: handleGenerateCsv,
-    },
+    { key: 'pdf', label: 'Download PDF Report', icon: <FilePdfOutlined />, onClick: handleGeneratePdf },
+    { key: 'csv', label: 'Download CSV Data', icon: <FileExcelOutlined />, onClick: handleGenerateCsv },
   ];
 
   const headerTextColor = themeMode === 'light' ? 'black' : 'white';
@@ -182,48 +126,20 @@ const MainDashboard: React.FC = () => {
         }}
       >
         <Space>
-          {isMobileView && (
-            <Button
-              icon={<MenuOutlined />}
-              onClick={toggleParameterDrawer}
-              aria-label="Toggle parameters drawer"
-            />
-          )}
+          {isMobileView && <Button icon={<MenuOutlined />} onClick={toggleParameterDrawer} aria-label="Toggle parameters drawer" />}
           {!isMobileView && (
             <>
-              <img 
-                src="/img/DoT_Logo.png"
-                alt="DTTS" 
-                style={{ height: 32, marginRight: 8 }}
-              />
-              <img 
-                src="/img/RMO-Logo-rebrand.jpg" 
-                alt="RMO" 
-                style={{ height: 32, marginRight: 8 }}
-              />
-              <img 
-                src="/img/PMS-Logo.png" 
-                alt="PMS" 
-                style={{ height: 32, marginRight: 16 }}
-              />
+              <img src="/img/DoT_Logo.png" alt="DTTS" style={{ height: 32, marginRight: 8 }} />
+              <img src="/img/RMO-Logo-rebrand.jpg" alt="RMO" style={{ height: 32, marginRight: 8 }} />
+              <img src="/img/PMS-Logo.png" alt="PMS" style={{ height: 32, marginRight: 16 }} />
+              <Title level={4} style={{ color: headerTextColor, margin: 0 }}>RMO Dashboard</Title>
             </>
-          )}
-          {!isMobileView && (
-            <Title level={4} style={{ color: headerTextColor, margin: 0 }}>
-              RMO Dashboard
-            </Title>
           )}
         </Space>
         <Space>
-          {!isMobileView && (
-            <Text style={{ color: headerTextColor }}>
-              Welcome, {user?.username}
-            </Text>
-          )}
+          {!isMobileView && <Text style={{ color: headerTextColor }}>Welcome, {user?.username}</Text>}
           <Dropdown menu={{ items: menuItems }} placement="bottomRight">
-            <Button icon={<DownloadOutlined />} loading={isGeneratingReport}>
-              {!isMobileView && 'Generate Report'}
-            </Button>
+            <Button icon={<DownloadOutlined />} loading={isGeneratingReport}>{!isMobileView && 'Generate Report'}</Button>
           </Dropdown>
           <Switch
             checkedChildren={<MoonOutlined />}
@@ -231,42 +147,20 @@ const MainDashboard: React.FC = () => {
             checked={themeMode === 'dark'}
             onChange={(checked) => setThemeMode(checked ? 'dark' : 'light')}
           />
-          <Button
-            type="primary"
-            ghost
-            icon={<LogoutOutlined />}
-            onClick={logout}
-          >
-            {!isMobileView && 'Logout'}
-          </Button>
+          <Button type="primary" ghost icon={<LogoutOutlined />} onClick={logout}>{!isMobileView && 'Logout'}</Button>
         </Space>
       </Header>
       <Layout>
-        {!mapView ? ( // Use !mapView to determine loading state
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: 'calc(100vh - 64px)',
-            }}
-          >
-            <Spin size="large" tip="Initializing Map..." />
+        <Spin spinning={!mapView} tip="Initializing Map & Data..." size="large">
+          <div style={{ height: 'calc(100vh - 64px)'}}>
+            {isMobileView ? <MobileDashboard /> : <Dashboard />}
           </div>
-        ) : isMobileView ? (
-          <MobileDashboard />
-        ) : (
-          <Dashboard />
-        )}
+        </Spin>
       </Layout>
     </Layout>
   );
 };
 
-/**
- * The root component that provides the theme and handles the authentication check.
- */
 const App: React.FC = () => {
   const themeMode = usePavementStore((state) => state.themeMode);
   const isAuthenticated = usePavementStore((state) => state.isAuthenticated);
