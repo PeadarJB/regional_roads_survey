@@ -1,10 +1,10 @@
 // src/store/slices/calculationsSlice.ts
 // This slice manages the calculated maintenance data and provides actions to trigger recalculation.
+// FIXED: Properly handle async calculations and removed missing imports.
 
 import type { StateCreator } from 'zustand';
 import type { StoreState } from '../usePavementStore';
 import type { MaintenanceCategory } from '../../types';
-import { calculateMaintenanceData } from '../../utils/calculations';
 import { FeatureLayerCalculator } from '../../utils/featureLayerCalculations';
 
 export interface CalculationsSlice {
@@ -13,9 +13,9 @@ export interface CalculationsSlice {
   categoryCosts: Record<MaintenanceCategory, number>;
   totalLength: number;
   totalCost: number;
-  
+
   // Actions
-  runCalculations: () => void;
+  runCalculations: () => Promise<void>;
 }
 
 const initialCalculationState: Omit<CalculationsSlice, 'runCalculations'> = {
@@ -37,26 +37,34 @@ const initialCalculationState: Omit<CalculationsSlice, 'runCalculations'> = {
   totalCost: 0
 };
 
-export const createCalculationsSlice: StateCreator<StoreState, [], [], CalculationsSlice> = (set, get) => ({
+export const createCalculationsSlice: StateCreator<
+  StoreState,
+  [],
+  [],
+  CalculationsSlice
+> = (set, get) => ({
   ...initialCalculationState,
-  
+
   runCalculations: async () => {
     const state = get();
-    
+
     // Get required data from other slices
-    const { roadNetwork, roadNetworkLayer, parameters, costs, selectedCounty } = state;
-    
-    // If Feature Layer is available, use it for calculations
+    const { roadNetworkLayer, parameters, costs, selectedCounty } = state;
+
+    // Use Feature Layer for all calculations (Phase 2)
     if (roadNetworkLayer) {
       const calculator = new FeatureLayerCalculator(roadNetworkLayer);
-      
+
       try {
+        console.log('Running Feature Layer calculations...');
         const results = await calculator.calculateMaintenanceData(
           parameters,
           costs,
           selectedCounty
         );
-        
+
+        console.log('Feature Layer calculation results:', results);
+
         set({
           categoryLengths: results.categoryLengths,
           categoryCosts: results.categoryCosts,
@@ -65,40 +73,13 @@ export const createCalculationsSlice: StateCreator<StoreState, [], [], Calculati
         });
       } catch (error) {
         console.error('Error calculating from Feature Layer:', error);
-        // Fallback to static data if needed
-        if (roadNetwork.length > 0) {
-            const results = calculateMaintenanceData(
-              roadNetwork,
-              parameters,
-              costs,
-              selectedCounty
-            );
-            
-            // Update the store with calculated results
-            set({
-              categoryLengths: results.categoryLengths,
-              categoryCosts: results.categoryCosts,
-              totalLength: results.totalLength,
-              totalCost: results.totalCost
-            });
-        }
+        // Set state to zero if calculations fail
+        set(initialCalculationState);
       }
-    } else if (roadNetwork.length > 0) {
-        // Existing static data calculation logic
-        const results = calculateMaintenanceData(
-          roadNetwork,
-          parameters,
-          costs,
-          selectedCounty
-        );
-        
-        // Update the store with calculated results
-        set({
-          categoryLengths: results.categoryLengths,
-          categoryCosts: results.categoryCosts,
-          totalLength: results.totalLength,
-          totalCost: results.totalCost
-        });
+    } else {
+      console.warn('Road network layer not available for calculations.');
+      // Set state to zero if the layer isn't ready
+      set(initialCalculationState);
     }
   }
 });

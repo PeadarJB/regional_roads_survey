@@ -132,7 +132,7 @@ export class FeatureLayerCalculator {
       
       // Calculate cost based on category
       const costPerSqM = this.getCostForCategory(category, costs);
-      const totalCost = (totalAreaSqM * costPerSqM) / 1_000_000_000; // Convert to billions
+      const totalCost = totalAreaSqM * costPerSqM; // Convert to billions
       
       return {
         length: totalLengthKm,

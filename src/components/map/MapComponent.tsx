@@ -1,68 +1,51 @@
 // src/components/map/MapComponent.tsx
-// This component handles the ArcGIS Map rendering and lifecycle
+// FIXED: Proper map initialization and component lifecycle management
 
 import React, { useEffect, useRef } from 'react';
-import { Typography, Tag } from 'antd';
 import { usePavementStore } from '../../store/usePavementStore';
+import { Tag } from 'antd';
 import EnhancedMapController from './EnhancedMapController';
 
-const { Text } = Typography;
-
 const MapComponent: React.FC = () => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const initializeMap = usePavementStore((state) => state.initializeMap);
-  const clearMap = usePavementStore((state) => state.clearMap);
+  const mapView = usePavementStore((state) => state.mapView);
   const selectedCategory = usePavementStore((state) => state.selectedCategory);
   const setSelectedCategory = usePavementStore((state) => state.setSelectedCategory);
   const isMobileView = usePavementStore((state) => state.isMobileView);
+  const roadNetworkLayer = usePavementStore((state) => state.roadNetworkLayer);
 
-  // Initialize map on mount
+  // Initialize the map when component mounts
   useEffect(() => {
-    if (mapContainerRef.current) {
-      initializeMap(mapContainerRef.current);
+    if (mapRef.current && !mapView) {
+      console.log('Initializing map from MapComponent...');
+      initializeMap(mapRef.current);
     }
-
-    // Cleanup on unmount
+    
+    // Cleanup function
     return () => {
-      clearMap();
+      // Map cleanup is handled by the store
     };
-  }, [initializeMap, clearMap]);
+  }, [initializeMap, mapView]);
+
+  // Log layer status for debugging
+  useEffect(() => {
+    if (roadNetworkLayer) {
+      console.log('Road network layer is ready in MapComponent');
+    }
+  }, [roadNetworkLayer]);
 
   return (
     <>
       <div 
-        ref={mapContainerRef}
+        ref={mapRef} 
         style={{ 
           width: '100%', 
           height: '100%',
-          position: 'relative',
-          borderRadius: '6px',
-          overflow: 'hidden'
+          position: 'relative'
         }}
       >
-        {/* Overlay text when no category is selected */}
-        {!selectedCategory && (
-          <div
-            style={{
-              position: 'absolute',
-              top: isMobileView ? 8 : 16,
-              left: isMobileView ? 8 : 16,
-              right: isMobileView ? 8 : 16,
-              background: 'rgba(255, 255, 255, 0.9)',
-              padding: isMobileView ? '6px 12px' : '8px 16px',
-              borderRadius: '4px',
-              zIndex: 10,
-              textAlign: 'center',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-            }}
-          >
-            <Text type="secondary" style={{ fontSize: isMobileView ? 12 : 14 }}>
-              {isMobileView ? 'Tap a chart bar to filter' : 'Click on a chart bar or select a filter to highlight specific road sections'}
-            </Text>
-          </div>
-        )}
-        
-        {/* Show selected category */}
+        {/* Selected category tag overlay */}
         {selectedCategory && (
           <div
             style={{
@@ -85,9 +68,29 @@ const MapComponent: React.FC = () => {
             </Tag>
           </div>
         )}
+        
+        {/* Loading indicator */}
+        {!mapView && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 10,
+              background: 'rgba(255, 255, 255, 0.9)',
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}
+          >
+            Loading map...
+          </div>
+        )}
       </div>
-      {/* Enhanced Map Controller now handles all reactive updates using direct Feature Layer queries */}
-      <EnhancedMapController />
+      
+      {/* Enhanced Map Controller handles all reactive updates */}
+      {mapView && roadNetworkLayer && <EnhancedMapController />}
     </>
   );
 };

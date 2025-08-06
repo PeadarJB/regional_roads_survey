@@ -242,9 +242,10 @@ export const generatePdfReport = async (data: ReportData): Promise<void> => {
     ['Surface Restoration', 'PSCI (A)', `≤ ${data.parameters.surfaceRestoration_psci_a}`, ''],
     ['', 'PSCI (B) & IRI', `≤ ${data.parameters.surfaceRestoration_psci_b} & IRI ≥ ${data.parameters.surfaceRestoration_iri}`, ''],
     ['', 'PSCI (C)', `≤ ${data.parameters.surfaceRestoration_psci_c}`, ''],
-    ['Skid Resistance', 'PSCI (A)', `≤ ${data.parameters.skidResistance_psci_a}`, ''],
-    ['', 'PSCI (B) & CSC', `≤ ${data.parameters.skidResistance_psci_b} & CSC ≤ ${data.parameters.skidResistance_csc}`, ''],
-    ['', 'PSCI (C) & MPD', `≤ ${data.parameters.skidResistance_psci_c} & MPD ≤ ${data.parameters.skidResistance_mpd}`, 'mm']
+    ['Skid Resistance', 'PSCI (A)', `≤ ${data.parameters.restorationOfSkidResistance_psci_a}`, ''],
+
+    ['', 'PSCI (B) & CSC', `≤ ${data.parameters.restorationOfSkidResistance_psci_b} & CSC ≤ ${data.parameters.restorationOfSkidResistance_csc}`, ''],
+    ['', 'PSCI (C) & MPD', `≤ ${data.parameters.restorationOfSkidResistance_psci_c} & MPD ≤ ${data.parameters.restorationOfSkidResistance_mpd}`, 'mm']
   ];
 
   autoTable(doc, {
