@@ -41,9 +41,9 @@ export function categorizeSegment(segment: RoadSegment, params: MaintenanceParam
 
   // 4. Restoration of Skid Resistance
   if (
-    (segment.psci <= params.skidResistance_psci_a) ||
-    (segment.psci <= params.skidResistance_psci_b && segment.csc <= params.skidResistance_csc) ||
-    (segment.psci <= params.skidResistance_psci_c && segment.mpd <= params.skidResistance_mpd)
+    (segment.psci <= params.restorationOfSkidResistance_psci_a) ||
+    (segment.psci <= params.restorationOfSkidResistance_psci_b && segment.csc <= params.restorationOfSkidResistance_csc) ||
+    (segment.psci <= params.restorationOfSkidResistance_psci_c && segment.mpd <= params.restorationOfSkidResistance_mpd)
   ) {
     return 'Restoration of Skid Resistance';
   }

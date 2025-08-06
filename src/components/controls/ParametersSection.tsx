@@ -147,7 +147,7 @@ const ParametersSection: React.FC = () => {
       <ParameterInput
         label="PSCI ≤ (A)"
         value={parameters.skidResistance_psci_a}
-        onChange={handleParameterChange('skidResistance_psci_a')}
+        onChange={handleParameterChange('restorationOfSkidResistance_psci_a')}
         tooltip="Primary PSCI threshold for skid resistance"
         min={1}
         max={10}
@@ -157,7 +157,7 @@ const ParametersSection: React.FC = () => {
       <ParameterInput
         label="PSCI ≤ (B) & CSC ≤"
         value={parameters.skidResistance_psci_b}
-        onChange={handleParameterChange('skidResistance_psci_b')}
+        onChange={handleParameterChange('restorationOfSkidResistance_psci_b')}
         tooltip="Secondary PSCI threshold (combined with CSC)"
         min={1}
         max={10}
@@ -167,7 +167,7 @@ const ParametersSection: React.FC = () => {
       <ParameterInput
         label="CSC ≤"
         value={parameters.skidResistance_csc}
-        onChange={handleParameterChange('skidResistance_csc')}
+        onChange={handleParameterChange('restorationOfSkidResistance_csc')}
         tooltip="Characteristic SCRIM Coefficient - skid resistance measure"
         min={0}
         max={1}
@@ -177,7 +177,7 @@ const ParametersSection: React.FC = () => {
       <ParameterInput
         label="PSCI ≤ (C) & MPD ≤"
         value={parameters.skidResistance_psci_c}
-        onChange={handleParameterChange('skidResistance_psci_c')}
+        onChange={handleParameterChange('restorationOfSkidResistance_psci_c')}
         tooltip="Tertiary PSCI threshold (combined with MPD)"
         min={1}
         max={10}
@@ -187,7 +187,7 @@ const ParametersSection: React.FC = () => {
       <ParameterInput
         label="MPD ≤"
         value={parameters.skidResistance_mpd}
-        onChange={handleParameterChange('skidResistance_mpd')}
+        onChange={handleParameterChange('restorationOfSkidResistance_mpd')}
         tooltip="Mean Profile Depth - texture depth measure"
         suffix="mm"
         min={0}
